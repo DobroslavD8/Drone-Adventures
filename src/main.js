@@ -14,6 +14,12 @@ if (!BABYLON || !canvas) {
 
     // Create the scene
     const createScene = async () => { // Make async for physics plugin
+
+        // Forward declare reset functions so they can be used early if needed
+        let resetCurrentMission;
+        let resetGame;
+
+
         const scene = new BABYLON.Scene(engine);
         scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1); // Dark background
 
@@ -382,6 +388,8 @@ if (!BABYLON || !canvas) {
         return scene;
     };
 
+
+
     // Create the scene (now async)
     createScene().then(scene => {
 
@@ -620,7 +628,7 @@ if (!BABYLON || !canvas) {
 
                     // Advance to next mission or end game
                     gameState.currentMissionIndex++;
-                    if (gameState.currentMissionIndex < missionData.length) {
+                    if (gameState.currentMissionIndex < scene.userData.missionData.length) { // Use userData consistently
                         hud.missionObjectiveText.text = `Mission ${gameState.currentMissionIndex} Complete! Loading next...`;
                         hud.missionObjectiveText.color = "lime";
                         // Delay slightly before setting up next mission
