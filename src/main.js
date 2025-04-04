@@ -337,7 +337,55 @@ if (!BABYLON || !canvas) {
                 objectiveStart: "Objective: Go to Pickup 2",
                 objectiveDeliver: "Objective: Deliver to Building 2"
             }
-            // Add more missions here
+            ,
+            { // Mission 2
+                pickupPos: new BABYLON.Vector3(-18, 0.1, 8), // Near tree 1
+                deliveryPos: box3.position.clone().add(new BABYLON.Vector3(0, box3.getBoundingInfo().boundingBox.maximumWorld.y - box3.position.y + 0.1, 0)), // On box3
+                objectiveStart: "Objective: Pickup near Tree 1",
+                objectiveDeliver: "Objective: Deliver to Building 3"
+            },
+            { // Mission 3
+                pickupPos: new BABYLON.Vector3(12, 0.1, 17), // Near barrel 1
+                deliveryPos: new BABYLON.Vector3(23, 0.1, -27), // Ground near tree 2
+                objectiveStart: "Objective: Pickup near Barrel 1",
+                objectiveDeliver: "Objective: Deliver near Tree 2"
+            },
+            { // Mission 4
+                pickupPos: new BABYLON.Vector3(0, 0.1, 0), // Center ground
+                deliveryPos: box1.position.clone().add(new BABYLON.Vector3(0, box1.getBoundingInfo().boundingBox.maximumWorld.y - box1.position.y + 0.1, 0)), // On box1 again
+                objectiveStart: "Objective: Pickup at Center",
+                objectiveDeliver: "Objective: Deliver to Building 1 (Top)"
+            },
+            { // Mission 5
+                pickupPos: new BABYLON.Vector3(-13, 0.1, -18), // Near building 2
+                deliveryPos: new BABYLON.Vector3(-8, 0.1, -33), // Ground near tree 3
+                objectiveStart: "Objective: Pickup near Building 2",
+                objectiveDeliver: "Objective: Deliver near Tree 3"
+            },
+            { // Mission 6
+                pickupPos: new BABYLON.Vector3(33, 0.1, 33), // Near tree 4
+                deliveryPos: box2.position.clone().add(new BABYLON.Vector3(0, box2.getBoundingInfo().boundingBox.maximumWorld.y - box2.position.y + 0.1, 0)), // On box2 again
+                objectiveStart: "Objective: Pickup near Tree 4",
+                objectiveDeliver: "Objective: Deliver to Building 2 (Top)"
+            },
+            { // Mission 7
+                pickupPos: new BABYLON.Vector3(-40, 0.1, -40), // Corner
+                deliveryPos: box3.position.clone().add(new BABYLON.Vector3(0, box3.getBoundingInfo().boundingBox.maximumWorld.y - box3.position.y + 0.1, 0)), // On box3 again
+                objectiveStart: "Objective: Pickup at SW Corner",
+                objectiveDeliver: "Objective: Deliver to Building 3 (Top)"
+            },
+            { // Mission 8
+                pickupPos: new BABYLON.Vector3(40, 0.1, 40), // Opposite Corner
+                deliveryPos: new BABYLON.Vector3(-7, 0.1, 23), // Ground near barrel 2
+                objectiveStart: "Objective: Pickup at NE Corner",
+                objectiveDeliver: "Objective: Deliver near Barrel 2"
+            },
+            { // Mission 9
+                pickupPos: new BABYLON.Vector3(3, 0.1, -13), // Near barrel 3
+                deliveryPos: new BABYLON.Vector3(0, 0.1, 0), // Center ground
+                objectiveStart: "Objective: Pickup near Barrel 3",
+                objectiveDeliver: "Objective: Deliver to Center"
+            }
         ];
 
         // --- Mission Setup Elements (will be positioned by setupMission) ---
