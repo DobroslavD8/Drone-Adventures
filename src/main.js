@@ -737,6 +737,35 @@ if (!BABYLON || !canvas) {
                 }
                 // --- End Boundary Checks ---
 
+                // --- Manual Ground Collision Correction ---
+                const droneRadius = 0.5; // Based on physicsSphere diameter of 1
+                const groundLevel = 0;
+                if (drone.position.y - droneRadius < groundLevel) {
+                    // Drone has penetrated the ground
+                    drone.position.y = groundLevel + droneRadius; // Reset position to be exactly on the ground
+
+                    // Optional: Dampen vertical velocity to prevent bouncing or re-penetration immediately
+                    const currentVelocity = impostor.getLinearVelocity();
+                    if (currentVelocity && currentVelocity.y < 0) {
+                         impostor.setLinearVelocity(new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z));
+                    }
+                }
+                // --- End Manual Ground Collision Correction ---
+
+                // --- Altitude Limit Check ---
+                const maxAltitude = 150;
+                if (drone.position.y > maxAltitude) {
+                    drone.position.y = maxAltitude;
+                    // Optional: Zero out upward velocity to prevent bouncing off the ceiling
+                    const currentVelocity = impostor.getLinearVelocity();
+                    if (currentVelocity && currentVelocity.y > 0) {
+                        impostor.setLinearVelocity(new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z));
+                    }
+                }
+                // --- End Altitude Limit Check ---
+
+
+
 
             // --- Visual Tilt Logic ---
             const droneVisual = scene.userData.droneVisual; // Get the visual node
