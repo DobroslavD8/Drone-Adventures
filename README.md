@@ -4,21 +4,35 @@ This is a browser-based single-player drone game developed using HTML5, CSS3, an
 
 ## Objective
 
-Control a drone to complete various missions in a dynamic environment.
+Control a drone to complete a series of pickup and delivery missions within the time limit while avoiding obstacles.
 
-## How to Play (Initial Setup)
+## How to Play
 
 1.  Ensure you have a modern web browser (Chrome, Firefox, Edge recommended).
 2.  Open the `index.html` file in your browser.
-3.  (Controls and gameplay details will be added as development progresses).
+3.  **Controls:**
+    *   **Move:** WASD keys
+    *   **Ascend:** Spacebar
+    *   **Descend:** Shift key
+    *   **Rotate (Yaw):** Q / E keys
+    *   **Look:** Mouse movement
+    *   **Restart (Game Over):** R key
+4.  **Gameplay:**
+    *   Follow the objective text in the top-left HUD.
+    *   Fly to the cyan pickup zone.
+    *   Fly to the yellow delivery zone (appears after pickup).
+    *   Avoid hitting red barrels and other obstacles.
+    *   Complete each mission before the timer runs out.
+    *   You have 3 lives. Losing all lives results in Game Over.
 
-## Core Features (Planned)
+## Core Features (Implemented)
 
-*   **Drone Controls:** Smooth keyboard/mouse controls with realistic physics.
-*   **Missions:** Delivery, Obstacle Course, Exploration.
-*   **Environment:** Dynamic world with obstacles and basic weather effects.
-*   **HUD:** Display essential flight information (Battery, Altitude, Speed, Objectives).
-*   **Progression:** Unlock new missions/areas.
+*   **Drone Controls:** Keyboard/mouse controls with physics simulation (using Cannon.js).
+*   **Missions:** Series of 10 pickup and delivery missions.
+*   **Environment:** 3D world with ground, skybox, skyscrapers, trees, and hazardous barrels.
+*   **HUD:** Displays Altitude, Speed, Current Objective, Lives Remaining, and Mission Timer.
+*   **Mini-Map:** Shows player position (green), target location (red), and static obstacles (grey/green/orange).
+*   **Game State:** Lives system, mission timer, invincibility after hits, game over condition, and restart functionality.
 
 ## Technical Requirements
 
@@ -28,4 +42,7 @@ Control a drone to complete various missions in a dynamic environment.
 
 ## Known Issues / Limitations
 
-*   Currently in early development. Basic scene setup only.
+*   Basic visuals and placeholder textures for some elements.
+*   Physics interactions can sometimes be unpredictable.
+*   No sound effects or music.
+*   Mission difficulty scaling is basic.

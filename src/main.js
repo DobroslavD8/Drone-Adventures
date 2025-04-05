@@ -5,8 +5,79 @@ const canvas = document.getElementById("renderCanvas");
 if (!BABYLON || !canvas) {
     console.error("Babylon.js or canvas element not found!");
 } else {
-    // Initialize Babylon.js engine
-    const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+    // Wait for the DOM to be fully loaded before initializing
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize Babylon.js engine
+        const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+
+    // --- Mini-Map Setup ---
+    const mapContainer = document.getElementById('mapContainer'); // Assumes container is visible via inline styles
+
+    // Player Marker
+    const playerMarker = document.createElement('div');
+    // Apply essential styles inline
+    playerMarker.style.position = 'absolute';
+    playerMarker.style.width = '8px';
+    playerMarker.style.height = '8px';
+    playerMarker.style.borderRadius = '50%';
+    playerMarker.style.backgroundColor = '#00ff00'; // Green
+    playerMarker.style.border = '1px solid #ffffff';
+    playerMarker.style.zIndex = '10'; // Above map background, below container z-index
+    // playerMarker.className = 'map-marker player-marker'; // Classes might not be needed now
+    mapContainer.appendChild(playerMarker);
+
+    // Target Marker
+    const targetMarker = document.createElement('div');
+    // Apply essential styles inline
+    targetMarker.style.position = 'absolute';
+    targetMarker.style.width = '8px';
+    targetMarker.style.height = '8px';
+    targetMarker.style.borderRadius = '50%';
+    targetMarker.style.backgroundColor = '#ff0000'; // Red
+    targetMarker.style.border = '1px solid #ffffff';
+    targetMarker.style.zIndex = '10'; // Above map background, below container z-index
+    targetMarker.style.display = 'none'; // Initially hidden
+    // targetMarker.className = 'map-marker target-marker'; // Classes might not be needed now
+    mapContainer.appendChild(targetMarker);
+
+    // Define map boundaries based on play area (adjust if needed)
+    const mapWorldMinX = -50; // Corresponds to left edge of map
+    const mapWorldMaxX = 50;  // Corresponds to right edge of map
+    const mapWorldMinZ = -50; // Corresponds to bottom edge of map
+    const mapWorldMaxZ = 50;  // Corresponds to top edge of map
+    const mapWorldWidth = mapWorldMaxX - mapWorldMinX;
+    const mapWorldDepth = mapWorldMaxZ - mapWorldMinZ;
+
+    // Function to add a static obstacle marker to the map
+    const addObstacleMarker = (position, color = '#808080', size = '4px') => {
+        const marker = document.createElement('div');
+        marker.style.position = 'absolute';
+        marker.style.width = size;
+        marker.style.height = size;
+        marker.style.backgroundColor = color;
+        marker.style.zIndex = '5'; // Below player/target markers
+
+        // Calculate map position (only needs to be done once)
+        const normX = (position.x - mapWorldMinX) / mapWorldWidth;
+        const normZ = (position.z - mapWorldMinZ) / mapWorldDepth;
+        const mapX = BABYLON.Scalar.Clamp(normX, 0, 1) * mapContainer.offsetWidth; // Use offsetWidth directly if available at setup
+        const mapY = (1 - BABYLON.Scalar.Clamp(normZ, 0, 1)) * mapContainer.offsetHeight; // Use offsetHeight directly if available at setup
+
+        // Fallback if offsetWidth/Height are 0 during initial setup (less accurate)
+        const mapWidthPx = mapContainer.offsetWidth || 200; // Use CSS width as fallback
+        const mapHeightPx = mapContainer.offsetHeight || 150; // Use CSS height as fallback
+        const finalMapX = BABYLON.Scalar.Clamp(normX, 0, 1) * mapWidthPx;
+        const finalMapY = (1 - BABYLON.Scalar.Clamp(normZ, 0, 1)) * mapHeightPx;
+
+
+        marker.style.left = `${finalMapX - (parseInt(size) / 2)}px`; // Adjust for marker size
+        marker.style.top = `${finalMapY - (parseInt(size) / 2)}px`; // Adjust for marker size
+
+        mapContainer.appendChild(marker);
+    };
+
+    // --- End Mini-Map Setup ---
+
 
     // Global game parameters
     const invincibilityDuration = 1.0; // Seconds of invincibility after hit
@@ -21,7 +92,21 @@ if (!BABYLON || !canvas) {
 
 
         const scene = new BABYLON.Scene(engine);
-        scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1); // Dark background
+        // scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1); // Dark background - Replaced by Skybox
+
+        // --- Skybox (CubeTexture) ---
+        const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
+        const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMat", scene);
+        skyboxMaterial.backFaceCulling = false; // Render the inside of the box
+        skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://www.babylonjs-playground.com/textures/skybox", scene); // Load cube texture
+        skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE; // Set texture mode
+        skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0); // No diffuse color needed
+        skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0); // No specular color needed
+        skyboxMaterial.disableLighting = true; // Sky doesn't need lighting
+        skybox.material = skyboxMaterial;
+        skybox.infiniteDistance = true; // Keep skybox centered on camera
+        // --- End Skybox ---
+
 
         // Enable Physics Engine (Cannon.js)
         // Note: The global variable from the CDN is CANNON (uppercase)
@@ -36,8 +121,10 @@ if (!BABYLON || !canvas) {
         camera.cameraAcceleration = 0.05; // How fast the camera moves to follow
         camera.maxCameraSpeed = 10; // Max speed of the camera
         // Adjust camera sensitivity for smoother mouse control
-        camera.angularSensibilityX = 500; // Default is 2000, lower is less sensitive
-        camera.angularSensibilityY = 500; // Default is 2000, lower is less sensitive
+        camera.angularSensibilityX = 4000; // Increased from 2000, higher is less sensitive
+        camera.angularSensibilityY = 4000; // Increased from 2000, higher is less sensitive
+        camera.lowerHeightOffsetLimit = 1.0; // Prevent camera from going below y=1 relative to target
+        camera.minZ = 0.5; // Prevent camera from getting too close (often prevents ground clipping)
         // camera.attachControl(canvas, true); // Attach control later, only after locking the target
 
         // Create a light
@@ -47,12 +134,13 @@ if (!BABYLON || !canvas) {
         // Create a ground plane
         const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
         const groundMaterial = new BABYLON.StandardMaterial("groundMat", scene);
-        // groundMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.6, 0.5); // Greenish ground
-        // Use a basic grass-like texture color
-        groundMaterial.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/grass.png", scene);
-        groundMaterial.diffuseTexture.uScale = 10; // Repeat texture
+        // Revert to original grass texture but make it brighter
+        groundMaterial.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/grass.png", scene); // Original texture
+        groundMaterial.diffuseTexture.uScale = 10; // Original tiling
         groundMaterial.diffuseTexture.vScale = 10;
-        groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1); // Less shiny
+        groundMaterial.diffuseTexture.level = 1.5; // Increase brightness (default is 1.0)
+        // Removed bump/parallax settings
+        groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1); // Keep less shiny
         ground.material = groundMaterial;
         ground.receiveShadows = true; // Allow shadows on the ground
         // Add physics impostor to the ground (static)
@@ -61,34 +149,51 @@ if (!BABYLON || !canvas) {
 
         // Add some simple obstacles (Buildings)
         const buildingMaterial = new BABYLON.StandardMaterial("buildingMat", scene);
-        // Use a basic concrete/brick-like texture color
-        buildingMaterial.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/bricktile.jpg", scene);
-        buildingMaterial.diffuseTexture.uScale = 2;
-        buildingMaterial.diffuseTexture.vScale = 4;
-        buildingMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        // Use a skyscraper texture
+        buildingMaterial.diffuseTexture = new BABYLON.Texture("https://playground.babylonjs.com/textures/skyscraper.jpg", scene);
+        buildingMaterial.diffuseTexture.uScale = 2; // Horizontal tiling
+        buildingMaterial.diffuseTexture.vScale = 10; // Vertical tiling for height
+        buildingMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2); // Some specularity
 
-        const box1 = BABYLON.MeshBuilder.CreateBox("building1", { size: 5, height: 10 }, scene);
-        box1.position = new BABYLON.Vector3(15, 5, 10);
-        box1.material = buildingMaterial; // Apply building material
+        // --- Skyscraper 1 ---
+        const height1 = 35; // Reduced height
+        const box1 = BABYLON.MeshBuilder.CreateBox("building1", { width: 6, depth: 6, height: height1 }, scene);
+        box1.position = new BABYLON.Vector3(15, height1 / 2, 10); // Position base on ground
+        box1.material = buildingMaterial;
         box1.receiveShadows = true;
-        // Add physics impostor (static)
         box1.physicsImpostor = new BABYLON.PhysicsImpostor(box1, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
 
-
-        const box2 = BABYLON.MeshBuilder.CreateBox("building2", { width: 4, depth: 4, height: 15 }, scene);
-        box2.position = new BABYLON.Vector3(-10, 7.5, -15);
-        box2.material = buildingMaterial; // Apply building material
+        // --- Skyscraper 2 ---
+        const height2 = 50; // Reduced height
+        const box2 = BABYLON.MeshBuilder.CreateBox("building2", { width: 5, depth: 5, height: height2 }, scene);
+        box2.position = new BABYLON.Vector3(-10, height2 / 2, -15); // Position base on ground
+        box2.material = buildingMaterial;
         box2.receiveShadows = true;
-        // Add physics impostor (static)
         box2.physicsImpostor = new BABYLON.PhysicsImpostor(box2, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
 
-
-        const box3 = BABYLON.MeshBuilder.CreateBox("building3", { size: 8, height: 8 }, scene);
-        box3.position = new BABYLON.Vector3(5, 4, 25);
-        box3.material = buildingMaterial; // Apply building material
+        // --- Skyscraper 3 ---
+        const height3 = 30; // Reduced height
+        const box3 = BABYLON.MeshBuilder.CreateBox("building3", { width: 8, depth: 8, height: height3 }, scene);
+        box3.position = new BABYLON.Vector3(5, height3 / 2, 25); // Position base on ground
+        box3.material = buildingMaterial;
         box3.receiveShadows = true;
-        // Add physics impostor (static)
         box3.physicsImpostor = new BABYLON.PhysicsImpostor(box3, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
+
+        // --- New Building 4 ---
+        const height4 = 20; // Shorter
+        const box4 = BABYLON.MeshBuilder.CreateBox("building4", { width: 7, depth: 5, height: height4 }, scene);
+        box4.position = new BABYLON.Vector3(-25, height4 / 2, -5); // New position
+        box4.material = buildingMaterial;
+        box4.receiveShadows = true;
+        box4.physicsImpostor = new BABYLON.PhysicsImpostor(box4, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
+
+        // --- New Building 5 ---
+        const height5 = 25; // Shorter
+        const box5 = BABYLON.MeshBuilder.CreateBox("building5", { width: 5, depth: 7, height: height5 }, scene);
+        box5.position = new BABYLON.Vector3(25, height5 / 2, 20); // New position
+        box5.material = buildingMaterial;
+        box5.receiveShadows = true;
+        box5.physicsImpostor = new BABYLON.PhysicsImpostor(box5, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
 
 
         // --- Add Trees ---
@@ -327,22 +432,21 @@ if (!BABYLON || !canvas) {
         const missionData = [
             { // Mission 0
                 pickupPos: new BABYLON.Vector3(-20, 0.1, 20),
-                deliveryPos: box1.position.clone().add(new BABYLON.Vector3(0, box1.getBoundingInfo().boundingBox.maximumWorld.y - box1.position.y + 0.1, 0)), // On box1
+                deliveryPos: new BABYLON.Vector3(box1.position.x, height1 + 0.1, box1.position.z), // Use new height1
                 objectiveStart: "Objective: Go to Pickup",
-                objectiveDeliver: "Objective: Deliver to Building 1"
+                objectiveDeliver: "Objective: Deliver to Skyscraper 1"
             },
             { // Mission 1
                 pickupPos: new BABYLON.Vector3(30, 0.1, -10),
-                deliveryPos: box2.position.clone().add(new BABYLON.Vector3(0, box2.getBoundingInfo().boundingBox.maximumWorld.y - box2.position.y + 0.1, 0)), // On box2
+                deliveryPos: new BABYLON.Vector3(box2.position.x, height2 + 0.1, box2.position.z), // Use new height2
                 objectiveStart: "Objective: Go to Pickup 2",
-                objectiveDeliver: "Objective: Deliver to Building 2"
-            }
-            ,
+                objectiveDeliver: "Objective: Deliver to Skyscraper 2"
+            },
             { // Mission 2
                 pickupPos: new BABYLON.Vector3(-18, 0.1, 8), // Near tree 1
-                deliveryPos: box3.position.clone().add(new BABYLON.Vector3(0, box3.getBoundingInfo().boundingBox.maximumWorld.y - box3.position.y + 0.1, 0)), // On box3
+                deliveryPos: new BABYLON.Vector3(box3.position.x, height3 + 0.1, box3.position.z), // Use new height3
                 objectiveStart: "Objective: Pickup near Tree 1",
-                objectiveDeliver: "Objective: Deliver to Building 3"
+                objectiveDeliver: "Objective: Deliver to Skyscraper 3"
             },
             { // Mission 3
                 pickupPos: new BABYLON.Vector3(12, 0.1, 17), // Near barrel 1
@@ -352,9 +456,9 @@ if (!BABYLON || !canvas) {
             },
             { // Mission 4
                 pickupPos: new BABYLON.Vector3(0, 0.1, 0), // Center ground
-                deliveryPos: box1.position.clone().add(new BABYLON.Vector3(0, box1.getBoundingInfo().boundingBox.maximumWorld.y - box1.position.y + 0.1, 0)), // On box1 again
+                deliveryPos: new BABYLON.Vector3(box1.position.x, height1 + 0.1, box1.position.z), // Use new height1
                 objectiveStart: "Objective: Pickup at Center",
-                objectiveDeliver: "Objective: Deliver to Building 1 (Top)"
+                objectiveDeliver: "Objective: Deliver to Skyscraper 1 (Top)"
             },
             { // Mission 5
                 pickupPos: new BABYLON.Vector3(-13, 0.1, -18), // Near building 2
@@ -364,15 +468,15 @@ if (!BABYLON || !canvas) {
             },
             { // Mission 6
                 pickupPos: new BABYLON.Vector3(33, 0.1, 33), // Near tree 4
-                deliveryPos: box2.position.clone().add(new BABYLON.Vector3(0, box2.getBoundingInfo().boundingBox.maximumWorld.y - box2.position.y + 0.1, 0)), // On box2 again
+                deliveryPos: new BABYLON.Vector3(box2.position.x, height2 + 0.1, box2.position.z), // Use new height2
                 objectiveStart: "Objective: Pickup near Tree 4",
-                objectiveDeliver: "Objective: Deliver to Building 2 (Top)"
+                objectiveDeliver: "Objective: Deliver to Skyscraper 2 (Top)"
             },
             { // Mission 7
                 pickupPos: new BABYLON.Vector3(-40, 0.1, -40), // Corner
-                deliveryPos: box3.position.clone().add(new BABYLON.Vector3(0, box3.getBoundingInfo().boundingBox.maximumWorld.y - box3.position.y + 0.1, 0)), // On box3 again
+                deliveryPos: new BABYLON.Vector3(box3.position.x, height3 + 0.1, box3.position.z), // Use new height3
                 objectiveStart: "Objective: Pickup at SW Corner",
-                objectiveDeliver: "Objective: Deliver to Building 3 (Top)"
+                objectiveDeliver: "Objective: Deliver to Skyscraper 3 (Top)"
             },
             { // Mission 8
                 pickupPos: new BABYLON.Vector3(40, 0.1, 40), // Opposite Corner
@@ -433,6 +537,23 @@ if (!BABYLON || !canvas) {
         // Initial mission setup
         setupMission(scene.userData.gameState.currentMissionIndex, scene.userData);
 
+        // --- Add Obstacle Markers to Map (After scene creation) ---
+        // Buildings
+        addObstacleMarker(box1.position, '#a0a0a0', '8px'); // Light grey squares for buildings
+        addObstacleMarker(box2.position, '#a0a0a0', '8px');
+        addObstacleMarker(box3.position, '#a0a0a0', '8px');
+        addObstacleMarker(box4.position, '#a0a0a0', '8px'); // Add marker for new building
+        addObstacleMarker(box5.position, '#a0a0a0', '8px'); // Add marker for new building
+        // Trees (using their base positions)
+        addObstacleMarker(new BABYLON.Vector3(-15, 0, 5), '#228B22'); // Forest green circles for trees
+        addObstacleMarker(new BABYLON.Vector3(20, 0, -25), '#228B22');
+        addObstacleMarker(new BABYLON.Vector3(-5, 0, -30), '#228B22');
+        addObstacleMarker(new BABYLON.Vector3(30, 0, 30), '#228B22');
+        // Barrels
+        barrels.forEach(barrel => addObstacleMarker(barrel.position, '#FFA500', '6px')); // Orange smaller circles for barrels
+        // --- End Add Obstacle Markers ---
+
+
         return scene;
     };
 
@@ -446,6 +567,8 @@ if (!BABYLON || !canvas) {
         const verticalForceMagnitude = 25;
         const rotationSpeed = 1.5;
         const stabilizationForceFactor = 2.0;
+        const maxTiltAngle = 0.3; // Radians (approx 17 degrees)
+        const tiltLerpSpeed = 0.08; // Controls how quickly the drone tilts/returns
 
         // Define Play Area Boundaries
         const playAreaMinX = -49;
@@ -518,6 +641,9 @@ if (!BABYLON || !canvas) {
                 return;
             }
 
+            // Get current velocity once for use in tilt and HUD
+            const currentVelocity = impostor.getLinearVelocity();
+
 
             // --- Drone Physics Control Logic ---
 
@@ -553,10 +679,11 @@ if (!BABYLON || !canvas) {
                 if (input.up) {
                     verticalForce.y = verticalForceMagnitude + gravityCompensation;
                 } else if (input.down) {
-                    verticalForce.y = -verticalForceMagnitude + gravityCompensation; // Still apply some upward force to slow descent
+                    // Apply a downward force (gravity will add to this)
+                    verticalForce.y = -verticalForceMagnitude * 0.5; // Apply a moderate downward force
                 } else {
-                    // Apply stabilization force to hover (counteract gravity and current vertical velocity)
-                    verticalForce.y = gravityCompensation - (currentYVelocity * stabilizationForceFactor);
+                    // Neither up nor down is pressed. Apply minimal upward force to slightly slow the fall due to gravity.
+                    verticalForce.y = gravityCompensation * 0.1; // Apply only 10% of gravity compensation
                 }
 
                 // Apply combined forces at the center of the drone
@@ -611,7 +738,54 @@ if (!BABYLON || !canvas) {
                 // --- End Boundary Checks ---
 
 
-                // --- End Drone Physics Control Logic ---
+            // --- Visual Tilt Logic ---
+            const droneVisual = scene.userData.droneVisual; // Get the visual node
+            if (!droneVisual.rotationQuaternion) {
+                // Initialize quaternion if it doesn't exist
+                droneVisual.rotationQuaternion = BABYLON.Quaternion.Identity();
+            }
+
+            // Get drone's local axes (using physics sphere's orientation)
+            const droneMatrix = drone.computeWorldMatrix(true);
+            const localForward = BABYLON.Vector3.TransformNormal(BABYLON.Axis.Z, droneMatrix).normalize();
+            const localRight = BABYLON.Vector3.TransformNormal(BABYLON.Axis.X, droneMatrix).normalize();
+            // const localUp = BABYLON.Vector3.TransformNormal(BABYLON.Axis.Y, droneMatrix).normalize(); // Not needed for tilt
+
+            // Get current horizontal velocity (using the already declared currentVelocity)
+            // const currentVelocity = impostor.getLinearVelocity(); // REMOVED duplicate declaration
+            const horizontalVelocity = new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z);
+
+            // Project velocity onto drone's local axes
+            const forwardSpeed = BABYLON.Vector3.Dot(horizontalVelocity, localForward);
+            const rightSpeed = BABYLON.Vector3.Dot(horizontalVelocity, localRight);
+
+            // Calculate target tilt angles (pitch based on forward, roll based on right)
+            // Clamp the speed influence to avoid excessive tilt at high speeds if needed
+            const targetPitch = -BABYLON.Scalar.Clamp(forwardSpeed * 0.1, -maxTiltAngle, maxTiltAngle); // Tilt forward/backward
+            const targetRoll = BABYLON.Scalar.Clamp(rightSpeed * 0.1, -maxTiltAngle, maxTiltAngle); // Tilt left/right
+
+            // Create target rotation quaternion from Euler angles (pitch, yaw=0, roll)
+            // Yaw is handled by the physics sphere, visual node only pitches and rolls
+            const targetTiltQuaternion = BABYLON.Quaternion.FromEulerAngles(targetPitch, 0, targetRoll);
+
+            // Smoothly interpolate the visual drone's rotation towards the target tilt
+            BABYLON.Quaternion.SlerpToRef(
+                droneVisual.rotationQuaternion,
+                targetTiltQuaternion,
+                tiltLerpSpeed, // Adjust this value for faster/slower tilting
+                droneVisual.rotationQuaternion
+            );
+            // --- End Visual Tilt Logic ---
+
+            // --- End Drone Physics Control Logic ---
+
+
+            // --- Camera Ground Clipping Prevention ---
+            if (camera.position.y < 0.5) {
+                camera.position.y = 0.5;
+            }
+            // --- End Camera Ground Clipping Prevention ---
+
 
             // --- Collision Logic ---
             // Barrel Collision Check (only if not invincible)
@@ -695,7 +869,7 @@ if (!BABYLON || !canvas) {
 
 
             // --- Update HUD ---
-            const currentVelocity = impostor.getLinearVelocity();
+            // const currentVelocity = impostor.getLinearVelocity(); // REMOVED duplicate declaration
             const currentSpeed = Math.sqrt(currentVelocity.x * currentVelocity.x + currentVelocity.z * currentVelocity.z); // Horizontal speed
             const currentAltitude = drone.getAbsolutePosition().y; // Altitude from world origin (adjust if ground isn't at y=0)
             hud.altitudeText.text = `Altitude: ${currentAltitude.toFixed(1)} m`;
@@ -703,6 +877,10 @@ if (!BABYLON || !canvas) {
             // Mission objective text is updated within mission logic
 
             // --- End Update HUD ---
+
+            // --- Update Mini-Map ---
+            updateMap(scene.userData);
+            // --- End Update Mini-Map ---
 
 
             scene.render();
@@ -715,6 +893,9 @@ if (!BABYLON || !canvas) {
     });
 
     console.log("Babylon.js scene initialized with physics.");
+
+    // Debug code removed
+
 
     }).catch(error => {
         console.error("Failed to create scene:", error);
@@ -756,6 +937,11 @@ if (!BABYLON || !canvas) {
 
 
         // Reset Mission State
+
+        //missionState.stage = "pickup";
+        //missionState.hasPackage = false;
+        missionElements.pickupLocation.isVisible = true;
+        missionElements.deliveryLocation.isVisible = false;
         mission.stage = "pickup";
         mission.hasPackage = false;
         mission.pickupLocation.isVisible = true;
@@ -826,4 +1012,62 @@ if (!BABYLON || !canvas) {
         missionElements.deliveryLocation.isVisible = false;
     }
 
+
+    // --- Mini-Map Update Function ---
+    function updateMap(userData) {
+        if (!userData || !userData.drone || !userData.missionState || !userData.missionElements || !userData.missionData) return;
+
+        // Ensure map container is ready and has dimensions
+        if (!mapContainer || mapContainer.offsetWidth <= 0 || mapContainer.offsetHeight <= 0) {
+            // console.warn("Map container not ready or has no dimensions."); // Optional: for debugging
+            return;
+        }
+
+        const { drone, missionState, missionElements, missionData, gameState } = userData;
+        const mapWidthPx = mapContainer.offsetWidth;
+        const mapHeightPx = mapContainer.offsetHeight;
+
+        // --- Update Player Marker ---
+        const dronePos = drone.getAbsolutePosition();
+        // Normalize drone position within the map's world boundaries (0 to 1)
+        const playerNormX = (dronePos.x - mapWorldMinX) / mapWorldWidth;
+        const playerNormZ = (dronePos.z - mapWorldMinZ) / mapWorldDepth; // Z maps to Y on the 2D map
+
+        // Convert normalized position to pixel coordinates on the map
+        // Clamp values between 0 and 1 to prevent marker going outside map bounds slightly
+        const playerMapX = BABYLON.Scalar.Clamp(playerNormX, 0, 1) * mapWidthPx;
+        const playerMapY = (1 - BABYLON.Scalar.Clamp(playerNormZ, 0, 1)) * mapHeightPx; // Invert Z/Y because screen Y is downwards
+
+        // Apply position (no offset needed now as transform is removed)
+        playerMarker.style.left = `${playerMapX}px`;
+        playerMarker.style.top = `${playerMapY}px`;
+
+
+        // --- Update Target Marker ---
+        let targetPos = null;
+        const currentMission = missionData[gameState.currentMissionIndex];
+        if (missionState.stage === "pickup" && currentMission) {
+            targetPos = missionElements.pickupLocation.position;
+            targetMarker.style.display = 'block'; // Show marker
+        } else if (missionState.stage === "deliver" && currentMission) {
+            targetPos = missionElements.deliveryLocation.position;
+            targetMarker.style.display = 'block'; // Show marker
+        } else {
+            targetMarker.style.display = 'none'; // Hide marker if mission complete or invalid
+        }
+
+        if (targetPos) {
+            const targetNormX = (targetPos.x - mapWorldMinX) / mapWorldWidth;
+            const targetNormZ = (targetPos.z - mapWorldMinZ) / mapWorldDepth;
+            const targetMapX = BABYLON.Scalar.Clamp(targetNormX, 0, 1) * mapWidthPx;
+            const targetMapY = (1 - BABYLON.Scalar.Clamp(targetNormZ, 0, 1)) * mapHeightPx;
+
+            // Apply position (no offset needed now as transform is removed)
+            targetMarker.style.left = `${targetMapX}px`;
+            targetMarker.style.top = `${targetMapY}px`;
+        }
+    }
+        // --- End Mini-Map Update Function ---
+
+    }); // End DOMContentLoaded listener
 }
