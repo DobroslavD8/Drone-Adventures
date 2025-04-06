@@ -1,48 +1,72 @@
 # Drone Adventures - Browser Game
 
-This is a browser-based single-player drone game developed using HTML5, CSS3, and JavaScript with the Babylon.js framework.
+A browser-based 3D drone simulation game built with modern web technologies. Navigate through a dynamic environment, complete missions, and test your piloting skills!
 
-## Objective
+## Project Structure
 
-Control a drone to complete a series of pickup and delivery missions within the time limit while avoiding obstacles.
+```
+├── index.html          # Main entry point
+├── style.css          # Global styles
+└── src/
+    ├── main.js        # Core game logic
+    └── graphic-models/ # 3D models and assets
+```
 
-## How to Play
+## Features
 
-1.  Ensure you have a modern web browser (Chrome, Firefox, Edge recommended).
-2.  Open the `index.html` file in your browser.
-3.  **Controls:**
-    *   **Move:** WASD keys
-    *   **Ascend:** Spacebar
-    *   **Descend:** Shift key
-    *   **Rotate (Yaw):** Q / E keys
-    *   **Look:** Mouse movement
-    *   **Restart (Game Over):** R key
-4.  **Gameplay:**
-    *   Follow the objective text in the top-left HUD.
-    *   Fly to the cyan pickup zone.
-    *   Fly to the yellow delivery zone (appears after pickup).
-    *   Avoid hitting red barrels and other obstacles.
-    *   Complete each mission before the timer runs out.
-    *   You have 3 lives. Losing all lives results in Game Over.
+* **3D Environment:** Immersive world built with Babylon.js
+* **Physics Engine:** Realistic drone movement and collision detection
+* **Dynamic Lighting:** Day/night cycle with real-time shadows
+* **Responsive Controls:** Intuitive keyboard and mouse controls
+* **Mission System:** Progressive challenges and objectives
+* **Performance Optimized:** Smooth gameplay experience
 
-## Core Features (Implemented)
+## Getting Started
 
-*   **Drone Controls:** Keyboard/mouse controls with physics simulation (using Cannon.js).
-*   **Missions:** Series of 10 pickup and delivery missions.
-*   **Environment:** 3D world with ground, skybox, skyscrapers, trees, and hazardous barrels.
-*   **HUD:** Displays Altitude, Speed, Current Objective, Lives Remaining, and Mission Timer.
-*   **Mini-Map:** Shows player position (green), target location (red), and static obstacles (grey/green/orange).
-*   **Game State:** Lives system, mission timer, invincibility after hits, game over condition, and restart functionality.
+1. Clone the repository
+2. Open `index.html` in a modern web browser (Chrome, Firefox, or Edge recommended)
+3. Start playing!
 
-## Technical Requirements
+## Controls
 
-*   **Platform:** Web Browsers (HTML5, CSS3, JavaScript).
-*   **Framework:** Babylon.js
-*   **Performance:** Aiming for 60 FPS.
+* **Movement:** WASD keys
+* **Altitude:** 
+  * Spacebar (Up)
+  * Shift (Down)
+* **Camera:** Mouse movement
+* **Drone Rotation:** Q/E keys
+* **Reset:** R key (when game over)
 
-## Known Issues / Limitations
+## Development
 
-*   Basic visuals and placeholder textures for some elements.
-*   Physics interactions can sometimes be unpredictable.
-*   No sound effects or music.
-*   Mission difficulty scaling is basic.
+### Prerequisites
+* Modern web browser with WebGL support
+* Basic understanding of HTML5, CSS3, and JavaScript
+* Familiarity with Babylon.js (optional)
+
+### Running Locally
+Simply open `index.html` in your browser. No build process or server required!
+
+## Technical Stack
+
+* **Frontend:** HTML5, CSS3, JavaScript
+* **3D Engine:** Babylon.js
+* **Physics:** Built-in Babylon.js physics engine
+* **Assets:** Custom 3D models and textures
+
+## Future Enhancements
+
+* Add multiplayer support
+* Implement more challenging missions
+* Add sound effects and background music
+* Enhance visual effects and particle systems
+* Add customizable drone skins
+* Implement a scoring system
+
+## Contributing
+
+Feel free to fork the project and submit pull requests. For major changes, please open an issue first to discuss the proposed changes.
+
+## License
+
+This project is open source and available under the MIT License.

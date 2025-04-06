@@ -1,3 +1,37 @@
+// --- Suppress specific Babylon.js pointer warnings (EARLY Patch Attempt) ---
+// Apply this patch immediately if BABYLON is already loaded (e.g., via global script tag)
+try {
+    if (typeof BABYLON !== 'undefined' && BABYLON.Logger) {
+        const originalWarn = BABYLON.Logger.Warn;
+        const warningSubstringToSuppress = "makes sense to control ONE camera property with each pointer axis";
+        let patchConfirmedActive = false;
+
+        BABYLON.Logger.Warn = (message) => {
+            if (!patchConfirmedActive) {
+                console.log("%%% BABYLON LOGGER PATCH EXECUTING %%%"); // Prominent log
+                patchConfirmedActive = true;
+            }
+            if (message && typeof message === 'string' && message.includes(warningSubstringToSuppress)) {
+                // Suppress
+                // console.log("Suppressed BJS Warning:", message);
+            } else {
+                if (originalWarn) {
+                    originalWarn.apply(BABYLON.Logger, [message]);
+                } else {
+                    console.warn("Original BABYLON.Logger.Warn lost! Unsuppressed message:", message);
+                }
+            }
+        };
+        console.log("%%% Attempted EARLY patch of Babylon.js Logger %%%");
+    } else {
+        console.error("%%% BABYLON or BABYLON.Logger not available for EARLY patching %%%");
+    }
+} catch (e) {
+    console.error("%%% Error during EARLY logger patch:", e, "%%%");
+}
+// --- End EARLY Warning Suppression ---
+
+
 // Get the canvas element
 const canvas = document.getElementById("renderCanvas");
 
@@ -228,10 +262,10 @@ if (!BABYLON || !canvas) {
         barrelMaterial.diffuseColor = new BABYLON.Color3(0.7, 0.1, 0.1); // Red
         const barrels = []; // Keep track of barrels for collision checks
         const createBarrel = (name, position) => {
-            const barrel = BABYLON.MeshBuilder.CreateCylinder(name, { height: 2.0, diameter: 1.5 }, scene); // Increased size
+            const barrel = BABYLON.MeshBuilder.CreateCylinder(name, { height: 2.5, diameter: 2.0 }, scene); // Enlarged size
             barrel.material = barrelMaterial;
             barrel.position = position.clone();
-            barrel.position.y += 0.75; // Base at ground level
+            barrel.position.y += 1.25; // Adjust Y position based on new height/2
             barrel.physicsImpostor = new BABYLON.PhysicsImpostor(barrel, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: 0, restitution: 0.5 }, scene);
             barrel.metadata = { type: "barrel" }; // Add metadata for collision identification
             barrels.push(barrel);
@@ -291,7 +325,12 @@ if (!BABYLON || !canvas) {
 
         // Camera targets the physics sphere (which carries the visual mesh)
         camera.lockedTarget = physicsSphere;
+        // Use default attachControl
         camera.attachControl(canvas, true);
+
+        // --- Removed problematic block causing 'getInputByType is not a function' error ---
+        // scene.onReadyObservable.addOnce(() => { ... });
+        // --- End Removed Block ---
 
         // Input state object
         const inputState = {
@@ -310,33 +349,34 @@ if (!BABYLON || !canvas) {
         scene.onKeyboardObservable.add((kbInfo) => {
             switch (kbInfo.type) {
                 case BABYLON.KeyboardEventTypes.KEYDOWN:
-                    switch (kbInfo.event.key.toLowerCase()) {
-                        case "w": inputState.forward = true; break;
-                        case "r":
+                    // Use event.code for layout-independent key identification
+                    switch (kbInfo.event.code) {
+                        case "KeyW": inputState.forward = true; break;
+                        case "KeyR": // Use code "KeyR"
                             console.log("R key pressed (KEYDOWN)"); // Log R press
                             inputState.restart = true;
                             break;
-                        case "s": inputState.backward = true; break;
-                        case "a": inputState.left = true; break; // Strafe left
-                        case "d": inputState.right = true; break; // Strafe right
-                        case "q": inputState.rotateLeft = true; break; // Rotate left
-                        case "e": inputState.rotateRight = true; break; // Rotate right
-                        case " ": inputState.up = true; break; // Ascend
-                        case "shift": inputState.down = true; break; // Descend
+                        case "KeyS": inputState.backward = true; break;
+                        case "KeyA": inputState.left = true; break; // Strafe left
+                        case "KeyD": inputState.right = true; break; // Strafe right
+                        case "KeyQ": inputState.rotateLeft = true; break; // Rotate left
+                        case "KeyE": inputState.rotateRight = true; break; // Rotate right
+                        case "Space": inputState.up = true; break; // Ascend (Use code "Space")
+                        case "ShiftLeft": case "ShiftRight": inputState.down = true; break; // Descend (Already using code)
                     }
                     break;
                 case BABYLON.KeyboardEventTypes.KEYUP:
-                    switch (kbInfo.event.key.toLowerCase()) {
-                        case "w": inputState.forward = false; break;
-                        // ... existing keyup cases ...
-                        case "r": inputState.restart = false; break; // Reset restart flag on key up
-                        case "s": inputState.backward = false; break;
-                        case "a": inputState.left = false; break;
-                        case "d": inputState.right = false; break;
-                        case "q": inputState.rotateLeft = false; break;
-                        case "e": inputState.rotateRight = false; break;
-                        case " ": inputState.up = false; break;
-                        case "shift": inputState.down = false; break;
+                    // Use event.code for layout-independent key identification
+                    switch (kbInfo.event.code) {
+                        case "KeyW": inputState.forward = false; break;
+                        case "KeyR": inputState.restart = false; break; // Reset restart flag on key up (Use code "KeyR")
+                        case "KeyS": inputState.backward = false; break;
+                        case "KeyA": inputState.left = false; break;
+                        case "KeyD": inputState.right = false; break;
+                        case "KeyQ": inputState.rotateLeft = false; break;
+                        case "KeyE": inputState.rotateRight = false; break;
+                        case "Space": inputState.up = false; break; // (Use code "Space")
+                        case "ShiftLeft": case "ShiftRight": inputState.down = false; break; // (Already using code)
                     }
                     break;
             }
@@ -932,7 +972,7 @@ if (!BABYLON || !canvas) {
 
     // --- Game Reset Function ---
     function resetGame(userData) {
-        const { drone, hud, mission, gameState } = userData;
+        const { drone, hud, missionElements, gameState, missionState } = userData;
         const impostor = drone.physicsImpostor;
 
         console.log("Resetting game...");
@@ -969,12 +1009,10 @@ if (!BABYLON || !canvas) {
 
         //missionState.stage = "pickup";
         //missionState.hasPackage = false;
+        missionState.stage = "pickup";
+        missionState.hasPackage = false;
         missionElements.pickupLocation.isVisible = true;
         missionElements.deliveryLocation.isVisible = false;
-        mission.stage = "pickup";
-        mission.hasPackage = false;
-        mission.pickupLocation.isVisible = true;
-        mission.deliveryLocation.isVisible = false;
 
         // Reset HUD for the first mission
         setupMission(0, userData); // Setup mission 0 state
