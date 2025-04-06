@@ -5,10 +5,21 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
 ## Project Structure
 
 ```
-├── index.html          # Main entry point
+├── index.html          # Main HTML file
 ├── style.css          # Global styles
-└── src/
-    ├── main.js        # Core game logic
+└── src/               # Source code directory
+    ├── main.js        # Main entry point, initializes modules
+    ├── core/          # Core engine functionality
+    │   ├── engine.js  # Babylon.js engine setup
+    │   ├── scene.js   # Scene creation, lighting, environment
+    │   └── assetLoader.js # Asset loading utilities
+    ├── game/          # Game mechanics
+    │   ├── drone.js   # Drone physics and controls
+    │   ├── inputManager.js # Keyboard/mouse input handling
+    │   ├── missionManager.js # Mission and scoring system
+    │   └── physics.js # Physics setup and helpers
+    ├── ui/            # User interface
+    │   └── uiManager.js # UI updates (minimap, score, timer)
     └── graphic-models/ # 3D models and assets
 ```
 
@@ -29,13 +40,15 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
 
 ## Controls
 
-* **Movement:** WASD keys
-* **Altitude:** 
-  * Spacebar (Up)
-  * Shift (Down)
-* **Camera:** Mouse movement
-* **Drone Rotation:** Q/E keys
-* **Reset:** R key (when game over)
+* **Movement:** 
+  * W/A/S/D keys to tilt the drone for directional movement
+  * Spacebar to increase thrust (up)
+  * Shift to decrease thrust (down)
+* **Camera:** 
+  * Mouse movement to control camera angle
+  * Click to lock/unlock mouse pointer
+* **Objective:** Collect targets while avoiding obstacles
+* **Mini-map:** Shows your position and target locations
 
 ## Development
 
@@ -49,10 +62,15 @@ Simply open `index.html` in your browser. No build process or server required!
 
 ## Technical Stack
 
-* **Frontend:** HTML5, CSS3, JavaScript
-* **3D Engine:** Babylon.js
-* **Physics:** Built-in Babylon.js physics engine
-* **Assets:** Custom 3D models and textures
+* **Frontend:** HTML5, CSS3, JavaScript (ES6 Modules)
+* **3D Engine:** Babylon.js for rendering and scene management
+* **Physics:** Cannon.js physics engine integration
+* **Architecture:** Modular design with separate components for:
+  * Core engine setup and scene management
+  * Game mechanics and physics
+  * User interface and HUD
+  * Input handling and controls
+* **Assets:** 3D models, textures, and skybox
 
 ## Future Enhancements
 
