@@ -1,11 +1,115 @@
-\
-
 let mapContainer, playerMarker, targetMarker;
 let mapWorldMinX, mapWorldMaxX, mapWorldMinZ, mapWorldMaxZ;
 let mapWorldWidth, mapWorldDepth;
 let mapWidthPx, mapHeightPx;
 
+// Store references to Babylon GUI elements
+let adt, altitudeText, speedText, missionObjectiveText, livesText, timerText, gameOverText, controlsPanel;
 
+
+// --- Babylon.js GUI Setup ---
+export function initializeBabylonGUI(initialLives, initialTime, initialObjective) {
+    adt = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+    const hudPanel = new BABYLON.GUI.StackPanel();
+    hudPanel.width = "250px"; // Increased width for longer text
+    hudPanel.isVertical = true;
+    hudPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    hudPanel.paddingTop = "10px";
+    hudPanel.paddingLeft = "10px";
+    adt.addControl(hudPanel);
+
+    altitudeText = new BABYLON.GUI.TextBlock("altitudeText", "Altitude: 0.0 m");
+    altitudeText.height = "30px";
+    altitudeText.color = "white";
+    altitudeText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.addControl(altitudeText);
+
+    speedText = new BABYLON.GUI.TextBlock("speedText", "Speed: 0.0 m/s");
+    speedText.height = "30px";
+    speedText.color = "white";
+    speedText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.addControl(speedText);
+
+    missionObjectiveText = new BABYLON.GUI.TextBlock("missionObjectiveText", initialObjective || "Objective: ---");
+    missionObjectiveText.height = "30px";
+    missionObjectiveText.color = "yellow";
+    missionObjectiveText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.addControl(missionObjectiveText);
+
+    livesText = new BABYLON.GUI.TextBlock("livesText", `Lives: ${initialLives || 3}`);
+    livesText.height = "30px";
+    livesText.color = "red";
+    livesText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.addControl(livesText);
+
+    timerText = new BABYLON.GUI.TextBlock("timerText", `Time: ${initialTime?.toFixed(1) || '0.0'}`);
+    timerText.height = "30px";
+    timerText.color = "lightblue";
+    timerText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.addControl(timerText);
+
+
+    // --- Game Over Text (Initially Hidden) ---
+    gameOverText = new BABYLON.GUI.TextBlock("gameOverText", "GAME OVER\nPress R to Restart");
+    gameOverText.color = "red";
+    gameOverText.fontSize = 48;
+    gameOverText.fontWeight = "bold";
+    gameOverText.textWrapping = true;
+    gameOverText.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    gameOverText.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    gameOverText.isVisible = false; // Hide initially
+    adt.addControl(gameOverText);
+
+
+    // --- Controls Legend ---
+    controlsPanel = new BABYLON.GUI.StackPanel();
+    controlsPanel.width = "220px";
+    controlsPanel.isVertical = true;
+    controlsPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    controlsPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    controlsPanel.paddingTop = "10px";
+    controlsPanel.paddingRight = "10px";
+    adt.addControl(controlsPanel);
+
+    const controlsTitle = new BABYLON.GUI.TextBlock("controlsTitle", "Controls:");
+    controlsTitle.height = "25px";
+    controlsTitle.color = "white";
+    controlsTitle.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    controlsPanel.addControl(controlsTitle);
+
+    const controlsText = new BABYLON.GUI.TextBlock("controlsText",
+        "Move: WASD\n" +
+        "Ascend: Space\n" +
+        "Descend: Shift\n" +
+        "Rotate: Q / E\n" +
+        "Look: Mouse\n" +
+        "Restart (Game Over): R" // Added Restart info
+    );
+    controlsText.height = "120px"; // Adjust height as needed
+    controlsText.color = "white";
+    controlsText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    controlsText.textWrapping = true;
+        controlsPanel.addControl(controlsText);
+
+    // console.log("Babylon.js GUI initialized."); // Removed log
+
+    // Return references to the created elements
+    return {
+        adt,
+        altitudeText,
+        speedText,
+        missionObjectiveText,
+        livesText,
+        timerText,
+        gameOverText,
+        controlsPanel
+    };
+}
+
+
+// --- HTML Minimap Setup ---
 export function setupMinimap(obstacles) {
     mapContainer = document.getElementById('mapContainer');
     if (!mapContainer) {
@@ -57,7 +161,10 @@ export function setupMinimap(obstacles) {
         });
     }
 
-    console.log("Minimap setup complete.");
+    // console.log("Minimap setup complete."); // Removed log
+
+    // Return the created marker elements so main.js can reference them
+    return { playerMarker, targetMarker };
 }
 
 
@@ -108,24 +215,70 @@ export function addObstacleMarkerToMap(position, color = '#808080', size = '4px'
     mapContainer.appendChild(marker);
 }
 
+// --- Update Babylon GUI Elements ---
 
-export function updateScore(score) {
+export function updateAltitudeText(altitude) {
+    if (altitudeText) {
+        altitudeText.text = `Altitude: ${altitude.toFixed(1)} m`;
+    }
+}
+
+export function updateSpeedText(speed) {
+    if (speedText) {
+        speedText.text = `Speed: ${speed.toFixed(1)} m/s`;
+    }
+}
+
+export function updateMissionObjectiveText(text, color = "yellow") {
+    if (missionObjectiveText) {
+        missionObjectiveText.text = text;
+        missionObjectiveText.color = color;
+        missionObjectiveText.isVisible = true; // Ensure visible when updated
+    }
+}
+
+export function updateLivesText(lives) {
+    if (livesText) {
+        livesText.text = `Lives: ${lives}`;
+    }
+}
+
+export function updateTimerText(time) {
+    if (timerText) {
+        timerText.text = `Time: ${Math.max(0, time).toFixed(1)}`;
+    }
+}
+
+export function showGameOverScreen(show) {
+    if (gameOverText) {
+        gameOverText.isVisible = show;
+    }
+     if (missionObjectiveText) {
+        missionObjectiveText.isVisible = !show; // Hide objective when game over is shown
+    }
+}
+
+
+// --- HTML Element Updates (Keep for potential future use or remove if unused) ---
+
+export function updateScore(score) { // Example - Not currently used by Babylon GUI
     const scoreElement = document.getElementById('scoreValue');
     if (scoreElement) {
         scoreElement.textContent = score;
     }
 }
 
-
-export function updateTimer(time) {
-    const timerElement = document.getElementById('timerValue');
+// This function updates a separate HTML timer element, not the Babylon GUI one.
+// Keep if you have a separate HTML timer, otherwise remove.
+export function updateHtmlTimer(time) {
+    const timerElement = document.getElementById('timerValue'); // Assumes an HTML element with id="timerValue"
     if (timerElement) {
         timerElement.textContent = Math.max(0, time).toFixed(1);
     }
 }
 
-
-export function showMessage(message, duration = 3000) {
+// This function shows a message in a separate HTML element.
+export function showHtmlMessage(message, duration = 3000) {
     const messageElement = document.getElementById('message');
     if (messageElement) {
         messageElement.textContent = message;

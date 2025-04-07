@@ -8,19 +8,18 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
 ├── index.html          # Main HTML file
 ├── style.css          # Global styles
 └── src/               # Source code directory
-    ├── main.js        # Main entry point, initializes modules
-    ├── core/          # Core engine functionality
-    │   ├── engine.js  # Babylon.js engine setup
-    │   ├── scene.js   # Scene creation, lighting, environment
-    │   └── assetLoader.js # Asset loading utilities
-    ├── game/          # Game mechanics
-    │   ├── drone.js   # Drone physics and controls
-    │   ├── inputManager.js # Keyboard/mouse input handling
-    │   ├── missionManager.js # Mission and scoring system
-    │   └── physics.js # Physics setup and helpers
-    ├── ui/            # User interface
-    │   └── uiManager.js # UI updates (minimap, score, timer)
-    └── graphic-models/ # 3D models and assets
+    ├── main.js        # Main entry point: imports modules, orchestrates initialization & game loop
+    ├── core/          # Core engine and scene setup
+    │   ├── engine.js  # Babylon.js engine initialization
+    │   └── scene.js   # Creates scene, camera, lights, ground, skybox, obstacles (buildings, trees, barrels)
+    ├── game/          # Game logic and mechanics
+    │   ├── drone.js   # Drone mesh creation, physics update logic, visual tilt, state reset
+    │   ├── inputManager.js # Keyboard input state management
+    │   ├── missionManager.js # Mission data, setup, progression logic, minimap target updates
+    │   └── physics.js # Enables physics engine (Cannon.js) and sets parameters
+    ├── ui/            # User interface elements
+    │   └── uiManager.js # Babylon.js GUI (HUD, game over, controls) & HTML minimap setup/updates
+    └── graphic-models/ # 3D models (not currently used by code)
 ```
 
 ## Features

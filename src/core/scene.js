@@ -1,4 +1,3 @@
-\
 // Scene Creation, Lighting, Environment
 
 export function createScene(engine) {
@@ -34,9 +33,9 @@ export function createScene(engine) {
     camera.rotationOffset = 0; // Angle around the target (0 = directly behind)
     camera.cameraAcceleration = 0.05; // How fast the camera moves to follow
     camera.maxCameraSpeed = 10; // Max speed of the camera
-    // Adjust camera sensitivity for smoother mouse control
-    camera.angularSensibilityX = 4000; // Increased from 2000, higher is less sensitive
-    camera.angularSensibilityY = 4000; // Increased from 2000, higher is less sensitive
+    // Adjust camera sensitivity for smoother mouse control (Higher value = LESS sensitive)
+    camera.angularSensibilityX = 16000; // Increased from 8000
+    camera.angularSensibilityY = 16000; // Increased from 8000
     camera.lowerHeightOffsetLimit = 1.0; // Prevent camera from going below y=1 relative to target
     camera.minZ = 0.5; // Prevent camera from getting too close (often prevents ground clipping)
     // camera.attachControl(canvas, true); // Attach control later, only after locking the target
@@ -45,11 +44,14 @@ export function createScene(engine) {
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
     light.intensity = 0.7;
 
-    // Create a ground plane
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 100, height: 100 }, scene);
+    // Create ground using a thin Box instead of CreateGround
+    const groundSize = 100;
+    const groundThickness = 0.5; // Make it thin but not zero
+    const ground = BABYLON.MeshBuilder.CreateBox("groundBox", { width: groundSize, height: groundThickness, depth: groundSize }, scene);
+    ground.position.y = -groundThickness / 2; // Position it so the top surface is at y=0
     const groundMaterial = new BABYLON.StandardMaterial("groundMat", scene);
-    // Revert to original grass texture but make it brighter
-    groundMaterial.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/grass.png", scene); // Original texture
+    // Use original grass texture
+    groundMaterial.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/grass.png", scene);
     groundMaterial.diffuseTexture.uScale = 10; // Original tiling
     groundMaterial.diffuseTexture.vScale = 10;
     groundMaterial.diffuseTexture.level = 1.5; // Increase brightness (default is 1.0)
@@ -57,9 +59,7 @@ export function createScene(engine) {
     groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1); // Keep less shiny
     ground.material = groundMaterial;
     ground.receiveShadows = true; // Allow shadows on the ground
-    // Add physics impostor to the ground (static) - Physics should be enabled before impostors are added
-    // We'll assume physics is enabled by the caller before calling this function, or handle it elsewhere
-    ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1, friction: 0.5 }, scene);
+    // REMOVED Impostor creation: ground.physicsImpostor = new BABYLON.PhysicsImpostor(...)
 
 
     // Add some simple obstacles (Buildings)
@@ -77,7 +77,7 @@ export function createScene(engine) {
     box1.position = new BABYLON.Vector3(15, height1 / 2, 10); // Position base on ground
     box1.material = buildingMaterial;
     box1.receiveShadows = true;
-    box1.physicsImpostor = new BABYLON.PhysicsImpostor(box1, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
+    // REMOVED Impostor creation: box1.physicsImpostor = new BABYLON.PhysicsImpostor(...)
     obstacles.push(box1);
 
     // --- Skyscraper 2 ---
@@ -86,7 +86,7 @@ export function createScene(engine) {
     box2.position = new BABYLON.Vector3(-10, height2 / 2, -15); // Position base on ground
     box2.material = buildingMaterial;
     box2.receiveShadows = true;
-    box2.physicsImpostor = new BABYLON.PhysicsImpostor(box2, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
+    // REMOVED Impostor creation: box2.physicsImpostor = new BABYLON.PhysicsImpostor(...)
     obstacles.push(box2);
 
     // --- Skyscraper 3 ---
@@ -95,7 +95,7 @@ export function createScene(engine) {
     box3.position = new BABYLON.Vector3(5, height3 / 2, 25); // Position base on ground
     box3.material = buildingMaterial;
     box3.receiveShadows = true;
-    box3.physicsImpostor = new BABYLON.PhysicsImpostor(box3, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
+    // REMOVED Impostor creation: box3.physicsImpostor = new BABYLON.PhysicsImpostor(...)
     obstacles.push(box3);
 
     // --- New Building 4 ---
@@ -104,10 +104,62 @@ export function createScene(engine) {
     box4.position = new BABYLON.Vector3(-25, height4 / 2, -5); // New position
     box4.material = buildingMaterial;
     box4.receiveShadows = true;
-    box4.physicsImpostor = new BABYLON.PhysicsImpostor(box4, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.1 }, scene);
+    // REMOVED Impostor creation: box4.physicsImpostor = new BABYLON.PhysicsImpostor(...)
     obstacles.push(box4);
 
-    console.log("Scene, camera, light, ground, and obstacles created.");
+    // --- Add Trees ---
+    const treeMaterialTrunk = new BABYLON.StandardMaterial("treeTrunkMat", scene);
+    treeMaterialTrunk.diffuseColor = new BABYLON.Color3(0.4, 0.2, 0.1); // Brown
+    const treeMaterialLeaves = new BABYLON.StandardMaterial("treeLeavesMat", scene);
+    treeMaterialLeaves.diffuseColor = new BABYLON.Color3(0.2, 0.5, 0.2); // Dark Green
+    const trees = []; // Array to hold tree meshes (trunk + leaves)
 
-    return { scene, camera, light, ground, obstacles };
+    const createTree = (name, position) => {
+        const trunk = BABYLON.MeshBuilder.CreateCylinder(`${name}_trunk`, { height: 4, diameter: 0.8 }, scene);
+        trunk.material = treeMaterialTrunk;
+        trunk.position = position.clone();
+        trunk.position.y += 2; // Base at ground level
+        // REMOVED Impostor creation: trunk.physicsImpostor = new BABYLON.PhysicsImpostor(...)
+        obstacles.push(trunk); // Add trunk to obstacles for collision/map
+
+        const leaves = BABYLON.MeshBuilder.CreateSphere(`${name}_leaves`, { diameter: 3 }, scene);
+        leaves.material = treeMaterialLeaves;
+        leaves.position = position.clone();
+        leaves.position.y += 4.5; // Position above trunk
+        // REMOVED Impostor creation: leaves.physicsImpostor = new BABYLON.PhysicsImpostor(...)
+        // Don't add leaves to main obstacles array unless needed for specific collision/map logic
+        trees.push({ trunk, leaves }); // Store tree parts if needed later
+    };
+
+    createTree("tree1", new BABYLON.Vector3(-15, 0, 5));
+    createTree("tree2", new BABYLON.Vector3(20, 0, -25));
+    createTree("tree3", new BABYLON.Vector3(-5, 0, -30));
+    createTree("tree4", new BABYLON.Vector3(30, 0, 30));
+
+
+    // --- Add Barrels (Hazards) ---
+    const barrelMaterial = new BABYLON.StandardMaterial("barrelMat", scene);
+    barrelMaterial.diffuseColor = new BABYLON.Color3(0.7, 0.1, 0.1); // Red
+    const barrels = []; // Keep track of barrels for collision checks
+    const createBarrel = (name, position) => {
+        const barrel = BABYLON.MeshBuilder.CreateCylinder(name, { height: 2.5, diameter: 2.0 }, scene); // Enlarged size
+        barrel.material = barrelMaterial;
+        barrel.position = position.clone();
+        barrel.position.y += 1.25; // Adjust Y position based on new height/2
+        // REMOVED Impostor creation: barrel.physicsImpostor = new BABYLON.PhysicsImpostor(...)
+        barrel.metadata = { type: "barrel" }; // Add metadata for collision identification
+        barrels.push(barrel);
+        obstacles.push(barrel); // Add barrels to the main obstacles list
+    };
+
+    createBarrel("barrel1", new BABYLON.Vector3(10, 0, 15));
+    createBarrel("barrel2", new BABYLON.Vector3(-5, 0, 20));
+    createBarrel("barrel3", new BABYLON.Vector3(0, 0, -10));
+    // --- End Barrels ---
+
+
+    console.log("Scene, camera, light, ground, obstacles, trees, and barrels created.");
+
+    // Return all created elements, including barrels
+    return { scene, camera, light, ground, obstacles, barrels };
 }
