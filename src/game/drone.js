@@ -17,31 +17,38 @@ export function createDrone(scene) {
 
 
     const droneVisual = new BABYLON.TransformNode("droneVisual", scene);
-    droneVisual.parent = physicsSphere; 
+    droneVisual.parent = physicsSphere;
 
-    const body = BABYLON.MeshBuilder.CreateBox("droneBody", { width: 0.8, height: 0.2, depth: 1.2 }, scene); 
-    body.material = new BABYLON.StandardMaterial("droneMat", scene);
-    body.material.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.4); 
-    body.parent = droneVisual;
+    // Load the GLB model asynchronously
+    BABYLON.SceneLoader.ImportMeshAsync("", "src/graphic-models/", "drone.glb", scene).then((result) => {
+        const droneMesh = result.meshes[0]; // Assuming the main mesh is the first one
+        if (droneMesh) {
+            droneMesh.name = "droneModel";
+            droneMesh.parent = droneVisual; // Parent the loaded mesh to the visual node
 
-    
-    const rotorMaterial = new BABYLON.StandardMaterial("rotorMat", scene);
-    rotorMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1); 
-    const rotorPositions = [
-        new BABYLON.Vector3(0.5, 0.1, 0.5),
-        new BABYLON.Vector3(-0.5, 0.1, 0.5),
-        new BABYLON.Vector3(0.5, 0.1, -0.5),
-        new BABYLON.Vector3(-0.5, 0.1, -0.5)
-    ];
-    rotorPositions.forEach((pos, i) => {
-        const rotor = BABYLON.MeshBuilder.CreateCylinder(`rotor${i}`, { height: 0.05, diameter: 0.4 }, scene);
-        rotor.material = rotorMaterial;
-        rotor.position = pos;
-        rotor.parent = droneVisual;
+            // --- Adjust Scale and Rotation ---
+            // Scale the model to approximate the previous primitive size (longest dimension ~1.2)
+            // relative to the physics sphere (diameter 1).
+            droneMesh.scaling = new BABYLON.Vector3(0.6, 0.6, 0.6);
+
+            // Rotate if necessary (GLB models often face +Z or +X, Babylon uses +Z forward)
+            // Rotating 90 degrees (PI/2) around Y-axis to potentially align forward direction.
+            droneMesh.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, Math.PI / 2, 0);
+
+            // Position adjustment within the visual node (if needed, e.g., to center it)
+            droneMesh.position = new BABYLON.Vector3(0, -0.1, 0); // Small adjustment down
+
+            console.log("Drone GLB model loaded and attached.");
+        } else {
+            console.error("Failed to load drone mesh from GLB.");
+        }
+    }).catch(error => {
+        console.error("Error loading drone GLB:", error);
     });
 
+
     // console.log("Drone created."); // Removed log
-    return physicsSphere;
+    return physicsSphere; // Return the physics sphere immediately
 }
 
 // --- Drone Control Parameters ---
