@@ -23,6 +23,7 @@ import {
     updateMapTargetMarker // Import the specific map target update function
 } from './game/missionManager.js';
 
+// --- PhysicsViewer is part of core BABYLON, no separate import needed ---
 
 // --- Early Babylon.js Logger Patch ---
 // Attempt to suppress specific pointer warnings if BABYLON is loaded globally
@@ -35,7 +36,7 @@ try {
                 originalWarn?.apply(BABYLON.Logger, [message]);
             }
         };
-        console.log("Applied EARLY patch to Babylon.js Logger.");
+        // console.log("Applied EARLY patch to Babylon.js Logger."); // Removed log
     }
 } catch (e) {
     console.error("Error during EARLY logger patch:", e);
@@ -75,9 +76,9 @@ if (!BABYLON || !canvas) {
         };
 
         // --- Scene and Physics Setup ---
-        // Create scene first (needs engine)
+        // Create scene first (needs engine) - Now async due to model loading
         // Note: createScene now returns { scene, camera, light, ground, obstacles, barrels }
-        const sceneResult = createScene(engine);
+        const sceneResult = await createScene(engine); // Added await
         if (!sceneResult) return;
         const { scene, camera, light, ground, obstacles, barrels } = sceneResult; // Destructure needed elements (added light, ground)
 
@@ -109,7 +110,8 @@ if (!BABYLON || !canvas) {
                 let impostorType;
                 let options = { mass: 0, restitution: 0.1 };
 
-                if (mesh.name.includes("building")) {
+                // Check for obstacles: invisible physics boxes, trees, barrels
+                if (mesh.name.endsWith("_physicsBox")) { // TARGET the invisible physics boxes
                     impostorType = BABYLON.PhysicsImpostor.BoxImpostor;
                 } else if (mesh.name.includes("trunk")) {
                     impostorType = BABYLON.PhysicsImpostor.CylinderImpostor;
@@ -124,9 +126,31 @@ if (!BABYLON || !canvas) {
                      // console.log(`Skipping impostor for mesh: ${mesh.name}`); // Removed log
                     return;
                 }
+                // <-- EXTRA BRACE REMOVED HERE
 
-                mesh.physicsImpostor = new BABYLON.PhysicsImpostor(mesh, impostorType, options, scene);
-                 // console.log(`Added ${impostorType} impostor to ${mesh.name}`); // Removed log
+                // Add the impostor only if an impostorType was determined
+                if (impostorType) {
+                    // console.log(`Attempting to add ${impostorType} impostor to ${mesh.name}`); // REMOVED LOG
+                    try {
+                        // Explicitly set collision group/mask to default (collide with everything)
+                        options.collisionGroup = 1;
+                        options.collisionMask = -1; // Collide with all groups
+
+                        mesh.physicsImpostor = new BABYLON.PhysicsImpostor(mesh, impostorType, options, scene);
+                        // Check immediately if it was assigned
+                        // if (mesh.physicsImpostor) {
+                        //     console.log(`Successfully created impostor for ${mesh.name}.`); // REMOVED LOG
+                        // } else {
+                        //     console.error(`Failed to assign impostor to ${mesh.name} (returned null/undefined).`); // REMOVED LOG
+                        // }
+                    } catch (e) {
+                         console.error(`Error during impostor creation for ${mesh.name}:`, e); // Keep error log just in case
+                    }
+                } else {
+                     // console.log(`No impostor type determined for mesh: ${mesh.name}`); // REMOVED LOG
+                }
+            } else {
+                 // console.log(`Mesh ${mesh.name} already has an impostor.`); // Optional log
             }
         });
 
@@ -135,16 +159,25 @@ if (!BABYLON || !canvas) {
         const droneMass = 1.0;
         const droneRestitution = 0.1;
         const droneFriction = 0.3;
+        const droneOptions = {
+            mass: droneMass,
+            restitution: droneRestitution,
+            friction: droneFriction,
+            collisionGroup: 1,     // Ensure drone is in group 1
+            collisionMask: -1      // Ensure drone collides with all groups
+        };
         drone.physicsImpostor = new BABYLON.PhysicsImpostor(
             drone, // The physics sphere mesh
             BABYLON.PhysicsImpostor.SphereImpostor,
-            { mass: droneMass, restitution: droneRestitution, friction: droneFriction },
+            droneOptions,
             scene
         );
         drone.physicsImpostor.physicsBody.angularDamping = 1.0;
         drone.physicsImpostor.physicsBody.fixedRotation = true;
         drone.physicsImpostor.physicsBody.updateMassProperties();
         // console.log("Physics impostors added."); // Removed log
+
+        // --- Physics Debugger Removed ---
 
 
         // --- Input Setup ---

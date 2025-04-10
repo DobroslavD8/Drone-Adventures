@@ -11,15 +11,15 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
     ├── main.js        # Main entry point: imports modules, orchestrates initialization & game loop
     ├── core/          # Core engine and scene setup
     │   ├── engine.js  # Babylon.js engine initialization
-    │   └── scene.js   # Creates scene, camera, lights, ground, skybox, obstacles (buildings, trees, barrels)
+    │   └── scene.js   # Creates scene, camera, lights, ground, skybox, loads/places obstacles (skyscraper model, trees, barrels)
     ├── game/          # Game logic and mechanics
     │   ├── drone.js   # Drone mesh creation, physics update logic, visual tilt, state reset
     │   ├── inputManager.js # Keyboard input state management
-    │   ├── missionManager.js # Mission data, setup, progression logic, minimap target updates
+    │   ├── missionManager.js # Mission data (pickup/delivery locations, adjusted heights), setup, progression logic, minimap target updates
     │   └── physics.js # Enables physics engine (Cannon.js) and sets parameters
     ├── ui/            # User interface elements
     │   └── uiManager.js # Babylon.js GUI (HUD, game over, controls) & HTML minimap setup/updates
-    └── graphic-models/ # 3D models (not currently used by code)
+    └── graphic-models/ # 3D models (drone.glb, skyscraper.glb)
 ```
 
 ## Features
@@ -69,7 +69,7 @@ Simply open `index.html` in your browser. No build process or server required!
   * Game mechanics and physics
   * User interface and HUD
   * Input handling and controls
-* **Assets:** 3D models, textures, and skybox
+* **Assets:** Uses GLB models (`drone.glb`, `skyscraper.glb`), textures, and skybox
 
 ## Future Enhancements
 

@@ -5,20 +5,20 @@
 // For now, using hardcoded vectors based on main.js. Ideally, pass obstacle refs or positions.
 const missionData = [
     { // Mission 0
-        pickupPos: new BABYLON.Vector3(-20, 0.1, 20),
-        deliveryPos: new BABYLON.Vector3(15, 35 + 0.1, 10), // Skyscraper 1 pos + height
+        pickupPos: new BABYLON.Vector3(-23, 0.1, 23), // Moved slightly NW away from Skyscraper 6
+        deliveryPos: new BABYLON.Vector3(15, 14 + 0.1, 10), // Skyscraper 1 pos + NEW height
         objectiveStart: "Objective: Go to Pickup",
         objectiveDeliver: "Objective: Deliver to Skyscraper 1"
     },
     { // Mission 1
         pickupPos: new BABYLON.Vector3(30, 0.1, -10),
-        deliveryPos: new BABYLON.Vector3(-10, 50 + 0.1, -15), // Skyscraper 2 pos + height
+        deliveryPos: new BABYLON.Vector3(-10, 14 + 0.1, -15), // Skyscraper 2 pos + NEW height
         objectiveStart: "Objective: Go to Pickup 2",
         objectiveDeliver: "Objective: Deliver to Skyscraper 2"
     },
     { // Mission 2
         pickupPos: new BABYLON.Vector3(-18, 0.1, 8), // Near tree 1
-        deliveryPos: new BABYLON.Vector3(5, 30 + 0.1, 25), // Skyscraper 3 pos + height
+        deliveryPos: new BABYLON.Vector3(5, 14 + 0.1, 25), // Skyscraper 3 pos + NEW height
         objectiveStart: "Objective: Pickup near Tree 1",
         objectiveDeliver: "Objective: Deliver to Skyscraper 3"
     },
@@ -30,7 +30,7 @@ const missionData = [
     },
     { // Mission 4
         pickupPos: new BABYLON.Vector3(0, 0.1, 0), // Center ground
-        deliveryPos: new BABYLON.Vector3(15, 35 + 0.1, 10), // Skyscraper 1 pos + height
+        deliveryPos: new BABYLON.Vector3(15, 14 + 0.1, 10), // Skyscraper 1 pos + NEW height
         objectiveStart: "Objective: Pickup at Center",
         objectiveDeliver: "Objective: Deliver to Skyscraper 1 (Top)"
     },
@@ -42,13 +42,13 @@ const missionData = [
     },
     { // Mission 6
         pickupPos: new BABYLON.Vector3(33, 0.1, 33), // Near tree 4
-        deliveryPos: new BABYLON.Vector3(-10, 50 + 0.1, -15), // Skyscraper 2 pos + height
+        deliveryPos: new BABYLON.Vector3(-10, 14 + 0.1, -15), // Skyscraper 2 pos + NEW height
         objectiveStart: "Objective: Pickup near Tree 4",
         objectiveDeliver: "Objective: Deliver to Skyscraper 2 (Top)"
     },
     { // Mission 7
         pickupPos: new BABYLON.Vector3(-40, 0.1, -40), // Corner
-        deliveryPos: new BABYLON.Vector3(5, 30 + 0.1, 25), // Skyscraper 3 pos + height
+        deliveryPos: new BABYLON.Vector3(5, 14 + 0.1, 25), // Skyscraper 3 pos + NEW height
         objectiveStart: "Objective: Pickup at SW Corner",
         objectiveDeliver: "Objective: Deliver to Skyscraper 3 (Top)"
     },

@@ -1,6 +1,7 @@
 // Scene Creation, Lighting, Environment
 
-export function createScene(engine) {
+// Use async function to allow await for model loading
+export async function createScene(engine) {
     if (!BABYLON) {
         console.error("Babylon.js not loaded!");
         return null;
@@ -61,51 +62,92 @@ export function createScene(engine) {
     ground.receiveShadows = true; // Allow shadows on the ground
     // REMOVED Impostor creation: ground.physicsImpostor = new BABYLON.PhysicsImpostor(...)
 
-
-    // Add some simple obstacles (Buildings)
     const obstacles = []; // Array to hold obstacle meshes
-    const buildingMaterial = new BABYLON.StandardMaterial("buildingMat", scene);
-    // Use a skyscraper texture
-    buildingMaterial.diffuseTexture = new BABYLON.Texture("https://playground.babylonjs.com/textures/skyscraper.jpg", scene);
-    buildingMaterial.diffuseTexture.uScale = 2; // Horizontal tiling
-    buildingMaterial.diffuseTexture.vScale = 10; // Vertical tiling for height
-    buildingMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2); // Some specularity
 
-    // --- Skyscraper 1 ---
-    const height1 = 35; // Reduced height
-    const box1 = BABYLON.MeshBuilder.CreateBox("building1", { width: 6, depth: 6, height: height1 }, scene);
-    box1.position = new BABYLON.Vector3(15, height1 / 2, 10); // Position base on ground
-    box1.material = buildingMaterial;
-    box1.receiveShadows = true;
-    // REMOVED Impostor creation: box1.physicsImpostor = new BABYLON.PhysicsImpostor(...)
-    obstacles.push(box1);
+    // --- Load Skyscraper Model ---
+    // Note: Using relative path from index.html
+    const skyscraperResult = await BABYLON.SceneLoader.ImportMeshAsync(
+        "", // Load all meshes from the file
+        "src/graphic-models/", // Path to the directory
+        "skyscraper.glb", // File name
+        scene
+    );
 
-    // --- Skyscraper 2 ---
-    const height2 = 50; // Reduced height
-    const box2 = BABYLON.MeshBuilder.CreateBox("building2", { width: 5, depth: 5, height: height2 }, scene);
-    box2.position = new BABYLON.Vector3(-10, height2 / 2, -15); // Position base on ground
-    box2.material = buildingMaterial;
-    box2.receiveShadows = true;
-    // REMOVED Impostor creation: box2.physicsImpostor = new BABYLON.PhysicsImpostor(...)
-    obstacles.push(box2);
+    // Assuming the first mesh (index 0) is the main skyscraper geometry.
+    // GLB models often import with a root node (__root__), so we might need to access its children.
+    // Let's assume skyscraperResult.meshes[0] is the root and skyscraperResult.meshes[1] is the visible mesh.
+    // If it loads differently, this might need adjustment.
+    const originalSkyscraperMesh = skyscraperResult.meshes.find(m => m.id !== "__root__" && m.getTotalVertices() > 0);
 
-    // --- Skyscraper 3 ---
-    const height3 = 30; // Reduced height
-    const box3 = BABYLON.MeshBuilder.CreateBox("building3", { width: 8, depth: 8, height: height3 }, scene);
-    box3.position = new BABYLON.Vector3(5, height3 / 2, 25); // Position base on ground
-    box3.material = buildingMaterial;
-    box3.receiveShadows = true;
-    // REMOVED Impostor creation: box3.physicsImpostor = new BABYLON.PhysicsImpostor(...)
-    obstacles.push(box3);
+    if (!originalSkyscraperMesh) {
+        console.error("Skyscraper mesh not found in the loaded GLB file!");
+    } else {
+        // Disable the original mesh, we'll use instances
+        originalSkyscraperMesh.setEnabled(false);
+        originalSkyscraperMesh.receiveShadows = true; // Allow instances to receive shadows
 
-    // --- New Building 4 ---
-    const height4 = 20; // Shorter
-    const box4 = BABYLON.MeshBuilder.CreateBox("building4", { width: 7, depth: 5, height: height4 }, scene);
-    box4.position = new BABYLON.Vector3(-25, height4 / 2, -5); // New position
-    box4.material = buildingMaterial;
-    box4.receiveShadows = true;
-    // REMOVED Impostor creation: box4.physicsImpostor = new BABYLON.PhysicsImpostor(...)
-    obstacles.push(box4);
+        // Define fixed dimensions OUTSIDE the function - FINAL ADJUSTMENT
+        const physicsBoxWidth = 2.2;  // Previous best fit
+        const physicsBoxHeight = 14;  // Adjusted height (Reduced from 15)
+        const physicsBoxDepth = 2.2;  // Previous best fit
+
+        // Function to create CLONES (not instances) and their physics boxes
+        // Pass dimensions as arguments
+        const createSkyscraperClone = (name, basePosition, width, height, depth, scale = 1) => {
+            // Clone the original mesh
+            const clone = originalSkyscraperMesh.clone(name, null, true);
+            if (!clone) {
+                console.error(`Failed to clone skyscraper mesh for ${name}`);
+                return null;
+            }
+            clone.setEnabled(true);
+
+            // Apply scaling FIRST - Make Y scale 3 times larger
+            const baseScale = 5;
+            const heightMultiplier = 3;
+            clone.scaling = new BABYLON.Vector3(baseScale * scale, baseScale * scale * heightMultiplier, baseScale * scale);
+            clone.receiveShadows = true;
+
+            // --- Create Fixed-Size Invisible Physics Box ---
+            console.log(`[${name}] Using fixed physics box size: W=${width}, H=${height}, D=${depth}`);
+
+            const physicsBox = BABYLON.MeshBuilder.CreateBox(`${name}_physicsBox`, {
+                width: width,   // Use argument
+                height: height, // Use argument
+                depth: depth    // Use argument
+            }, scene);
+
+            // Position the PHYSICS BOX center based on the basePosition and passed height
+            physicsBox.position = basePosition.clone(); // Start at base X,Z
+            physicsBox.position.y += height / 2;   // Move center up by half of passed height
+            physicsBox.isVisible = false; // Make it invisible
+            console.log(`[${name}] Physics box final position (center): X=${physicsBox.position.x.toFixed(2)}, Y=${physicsBox.position.y.toFixed(2)}, Z=${physicsBox.position.z.toFixed(2)}`);
+
+            // Parent the visual clone to the physics box
+            clone.parent = physicsBox;
+
+            // Set the visual clone's LOCAL position relative to the physics box
+            // Assuming both pivots are centered, move visual down by half-height
+            clone.position = new BABYLON.Vector3(0, -height / 2, 0); // Use height argument here
+            console.log(`[${name}] Visual clone LOCAL position set relative to parent physics box.`);
+
+            obstacles.push(physicsBox); // Add physics box to obstacles for impostor creation
+            // --- End Invisible Physics Box ---
+
+            return clone; // Return the visual clone (now parented)
+        };
+
+        // Create CLONES (visual) and their corresponding physics boxes (added to obstacles)
+        // Pass the dimensions to the function
+        createSkyscraperClone("skyscraper1", new BABYLON.Vector3(15, 0, 10), physicsBoxWidth, physicsBoxHeight, physicsBoxDepth);
+        createSkyscraperClone("skyscraper2", new BABYLON.Vector3(-10, 0, -15), physicsBoxWidth, physicsBoxHeight, physicsBoxDepth);
+        createSkyscraperClone("skyscraper3", new BABYLON.Vector3(5, 0, 25), physicsBoxWidth, physicsBoxHeight, physicsBoxDepth);
+        createSkyscraperClone("skyscraper4", new BABYLON.Vector3(-25, 0, -5), physicsBoxWidth, physicsBoxHeight, physicsBoxDepth);
+        createSkyscraperClone("skyscraper5", new BABYLON.Vector3(25, 0, -10), physicsBoxWidth, physicsBoxHeight, physicsBoxDepth);
+        createSkyscraperClone("skyscraper6", new BABYLON.Vector3(-20, 0, 20), physicsBoxWidth, physicsBoxHeight, physicsBoxDepth);
+    }
+    // --- End Skyscraper Model ---
+
 
     // --- Add Trees ---
     const treeMaterialTrunk = new BABYLON.StandardMaterial("treeTrunkMat", scene);
