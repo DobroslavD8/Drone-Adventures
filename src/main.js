@@ -48,9 +48,30 @@ try {
 }
 // --- End Logger Patch ---
 
+// --- Firebase Configuration ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAkiBYIn7waM1sC5wMpZD_sOuiKwY44Dh0",
+  authDomain: "drone-adventures-leaderboard.firebaseapp.com",
+  databaseURL: "https://drone-adventures-leaderboard-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "drone-adventures-leaderboard",
+  storageBucket: "drone-adventures-leaderboard.appspot.com",
+  messagingSenderId: "670560385341",
+  appId: "1:670560385341:web:3a1fc447a3ec636c03ed54"
+};
+
+// Initialize Firebase
+try {
+    firebase.initializeApp(firebaseConfig);
+} catch (e) {
+    console.error("Error initializing Firebase:", e);
+    // Handle initialization error (e.g., show message to user)
+}
+const database = firebase.database(); // Get a reference to the database service
+const leaderboardRef = database.ref('leaderboard'); // Reference to the 'leaderboard' path
+
 // --- Leaderboard Constants ---
-const LEADERBOARD_KEY = 'droneAdventuresHighScores';
-const MAX_LEADERBOARD_ENTRIES = 10; // Increased to 10
+// const LEADERBOARD_KEY = 'droneAdventuresHighScores'; // No longer needed
+const MAX_LEADERBOARD_ENTRIES = 10;
 
 // Get the canvas element
 const canvas = document.getElementById("renderCanvas");
@@ -64,7 +85,12 @@ if (!BABYLON || !canvas) {
     console.error("Babylon.js or canvas element not found!");
 } else if (!nicknameOverlay || !nicknameInput || !startGameBtn) {
     console.error("Nickname overlay elements not found!");
-} else {
+} else if (!firebase || !database) { // Check if Firebase initialized
+    console.error("Firebase SDK not loaded or initialized correctly!");
+    // Optionally display an error on the overlay
+    nicknameOverlay.innerHTML = "<h2>Error loading Leaderboard service. Please refresh.</h2>";
+}
+else {
 
     // --- Global Game State (Initialized before game start) ---
     const gameState = {
@@ -225,41 +251,76 @@ if (!BABYLON || !canvas) {
             console.log("Game reset complete.");
         }
 
-        // --- Leaderboard Functions ---
-        function loadHighScores() {
+        // --- Leaderboard Functions (Firebase) ---
+        async function loadHighScores() {
             try {
-                const scoresJSON = localStorage.getItem(LEADERBOARD_KEY);
-                if (scoresJSON) {
-                    const scores = JSON.parse(scoresJSON);
-                    // Ensure it's an array of {name: string, score: number} and sort descending by score
-                    return scores.filter(s => typeof s === 'object' && s !== null && typeof s.name === 'string' && typeof s.score === 'number')
-                                 .sort((a, b) => b.score - a.score);
+                // Fetch scores, order by score descending, limit to MAX_ENTRIES
+                const snapshot = await leaderboardRef.orderByChild('score').limitToLast(MAX_LEADERBOARD_ENTRIES).once('value');
+                const scoresData = snapshot.val();
+                if (scoresData) {
+                    // Firebase returns an object, convert to array and sort
+                    const scoresArray = Object.values(scoresData);
+                    scoresArray.sort((a, b) => b.score - a.score); // Sort descending
+                    return scoresArray;
                 }
-            } catch (e) { console.error("Error loading high scores:", e); }
-            return [];
+            } catch (e) {
+                console.error("Error loading high scores from Firebase:", e);
+            }
+            return []; // Return empty array on error or if no scores exist
         }
 
-        function saveHighScore(playerName, newScore) {
-            if (typeof newScore !== 'number' || newScore <= 0 || typeof playerName !== 'string' || !playerName) {
+        async function saveHighScore(playerName, newScore) {
+            if (typeof newScore !== 'number' || newScore < 0 || typeof playerName !== 'string' || !playerName) {
+                 console.warn("Attempted to save invalid score or name:", playerName, newScore);
                 return; // Don't save invalid scores or names
             }
-            const highScores = loadHighScores();
-            highScores.push({ name: playerName, score: newScore });
-            highScores.sort((a, b) => b.score - a.score); // Sort descending by score
-            const updatedScores = highScores.slice(0, MAX_LEADERBOARD_ENTRIES); // Keep only top scores
 
             try {
-                localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(updatedScores));
-            } catch (e) { console.error("Error saving high scores:", e); }
+                // Push the new score entry
+                const newScoreRef = leaderboardRef.push();
+                await newScoreRef.set({
+                    name: playerName,
+                    score: newScore,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP // Optional: add a timestamp
+                });
+                console.log("Score pushed to Firebase:", playerName, newScore);
+
+                // Prune excess entries (keep only top MAX_ENTRIES)
+                // Get all scores, sort, identify keys to remove
+                const snapshot = await leaderboardRef.orderByChild('score').once('value');
+                const scoresData = snapshot.val();
+                if (scoresData) {
+                    const scoresArray = Object.entries(scoresData) // Get [key, value] pairs
+                                           .map(([key, value]) => ({ key, ...value }));
+                    if (scoresArray.length > MAX_LEADERBOARD_ENTRIES) {
+                        scoresArray.sort((a, b) => b.score - a.score); // Sort descending
+                        const keysToRemove = scoresArray.slice(MAX_LEADERBOARD_ENTRIES).map(entry => entry.key);
+                        console.log("Pruning leaderboard, removing keys:", keysToRemove);
+                        const updates = {};
+                        keysToRemove.forEach(key => {
+                            updates[key] = null; // Setting path to null deletes it
+                        });
+                        await leaderboardRef.update(updates);
+                    }
+                }
+            } catch (e) {
+                console.error("Error saving high score to Firebase:", e);
+            }
         }
 
         // --- Game Over Handler ---
-        function handleGameOver() {
+        async function handleGameOver() { // Make async to await save/load
             if (gameState.isGameOver) return;
             gameState.isGameOver = true;
             console.log(`Handling Game Over for ${gameState.nickname}. Final Score: ${gameState.score}`);
-            saveHighScore(gameState.nickname, gameState.score); // Save with nickname
-            const finalScores = loadHighScores();
+
+            // Save score first (await ensures it's attempted before loading)
+            await saveHighScore(gameState.nickname, gameState.score);
+
+            // Then load the potentially updated scores
+            const finalScores = await loadHighScores();
+
+            // Display
             if (finalScores.length > 0 || gameState.score > 0) {
                  showLeaderboard(finalScores); // Pass the loaded scores {name, score} array
             } else {
@@ -309,7 +370,7 @@ if (!BABYLON || !canvas) {
                 gameState.invincibleTimer = invincibilityDuration;
                 if (gameState.lives <= 0) {
                     console.log("Game Over - Time Ran Out!");
-                    handleGameOver();
+                    handleGameOver(); // Now async
                 } else {
                     console.log("Time out! Pausing. Press R to continue.");
                     gameState.isPausedForTimeout = true;
@@ -329,7 +390,7 @@ if (!BABYLON || !canvas) {
             updateMissionLogic(drone, hudElements, gameState, missionState);
             if (gameState.currentMissionIndex >= missionData.length && !gameState.isGameOver) {
                  console.log("All missions completed!");
-                 handleGameOver();
+                 handleGameOver(); // Now async
             }
             if (gameState.isGameOver) { scene.render(); return; } // Check again after mission logic
 

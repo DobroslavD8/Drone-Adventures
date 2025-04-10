@@ -29,14 +29,24 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
 * **Dynamic Lighting:** Day/night cycle with real-time shadows
 * **Responsive Controls:** Intuitive keyboard and mouse controls
 * **Mission System:** Progressive challenges and objectives with a 30-second time limit per mission.
+* **Scoring System:** Earn points for completing missions quickly.
+* **Persistent Leaderboard:** Top 10 scores are saved globally using Firebase Realtime Database.
+* **Nickname Prompt:** Enter a nickname before starting the game.
 * **Timeout Recovery:** If the timer runs out but you still have lives, press 'R' to reset the drone and timer to retry the current objective.
 * **Performance Optimized:** Smooth gameplay experience
 
 ## Getting Started
 
 1. Clone the repository
-2. Open `index.html` in a modern web browser (Chrome, Firefox, or Edge recommended)
-3. Start playing!
+2. **Firebase Setup (Required for Leaderboard):**
+   * Create a free Firebase project.
+   * Enable the Realtime Database (start in "test mode" for development).
+   * Register a Web App in your Firebase project settings.
+   * Copy the `firebaseConfig` object provided by Firebase.
+   * Paste your `firebaseConfig` into `src/main.js`, replacing the placeholder configuration.
+3. Open `index.html` in a modern web browser (Chrome, Firefox, or Edge recommended).
+4. Enter a nickname when prompted (or accept "Guest").
+5. Start playing!
 
 ## Controls
 
@@ -82,7 +92,7 @@ Simply open `index.html` in your browser. No build process or server required!
 * Add sound effects and background music
 * Enhance visual effects and particle systems
 * Add customizable drone skins
-* Implement a scoring system
+* Improve security rules for Firebase database
 
 ## Contributing
 
