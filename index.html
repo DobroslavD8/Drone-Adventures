@@ -27,7 +27,9 @@
     <div id="mapContainer" style="position: fixed; bottom: 20px; right: 20px; width: 200px; height: 150px; background-color: rgba(50, 50, 50, 0.7); border: 1px solid #ffffff; z-index: 100; overflow: hidden;">
         <!-- Markers will still be added here by JS -->
     </div>
-    <script type="module" src="src/main.js" defer></script> <!-- Added defer -->
-    <script defer src="node_modules/@vercel/speed-insights/dist/web.js"></script>
+    <script type="module" src="src/main.js" defer></script>
+    <script>
+    !function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)},a=t.createElement(i),c=t.getElementsByTagName(i)[0],a.async=1,a.src=s,c.parentNode.insertBefore(a,c)}(window,document,"speed","script","https://cdn.vercel-insights.com/v1/speed-insights.js");
+    </script>
 </body>
 </html>

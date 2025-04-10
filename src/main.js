@@ -1,10 +1,6 @@
-import { inject } from '@vercel/speed-insights';
 import { initializeEngine } from './core/engine.js';
 import { createScene } from './core/scene.js';
 import { enablePhysics } from './game/physics.js';
-
-// Initialize Speed Insights
-inject();
 import { createDrone, updateDrone, resetDroneState } from './game/drone.js';
 import { initializeInput } from './game/inputManager.js';
 import {
