@@ -15,6 +15,11 @@
     <script src="https://cdn.babylonjs.com/cannon.js"></script>
 </head>
 <body>
+    <div id="nicknameOverlay">
+        <h2>Enter Your Nickname</h2>
+        <input type="text" id="nicknameInput" placeholder="Nickname" maxlength="15">
+        <button id="startGameBtn">Start Game</button>
+    </div>
     <canvas id="renderCanvas"></canvas>
     <div id="mapContainer" style="position: fixed; bottom: 20px; right: 20px; width: 200px; height: 150px; background-color: rgba(50, 50, 50, 0.7); border: 1px solid #ffffff; z-index: 100; overflow: hidden;">
         <!-- Markers will still be added here by JS -->

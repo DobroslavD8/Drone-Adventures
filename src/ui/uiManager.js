@@ -4,7 +4,7 @@ let mapWorldWidth, mapWorldDepth;
 let mapWidthPx, mapHeightPx;
 
 // Store references to Babylon GUI elements
-let adt, altitudeText, speedText, missionObjectiveText, livesText, timerText, gameOverText, timeoutContinueText, controlsPanel;
+let adt, altitudeText, speedText, missionObjectiveText, livesText, timerText, scoreText, gameOverText, timeoutContinueText, controlsPanel, leaderboardPanel, leaderboardTitle, leaderboardScoresText, leaderboardRestartText;
 
 
 // --- Babylon.js GUI Setup ---
@@ -50,6 +50,12 @@ export function initializeBabylonGUI(initialLives, initialTime, initialObjective
     timerText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     hudPanel.addControl(timerText);
 
+    scoreText = new BABYLON.GUI.TextBlock("scoreText", "Score: 0");
+    scoreText.height = "30px";
+    scoreText.color = "lime"; // Use a distinct color for score
+    scoreText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    hudPanel.addControl(scoreText);
+
 
     // --- Game Over Text (Initially Hidden) ---
     gameOverText = new BABYLON.GUI.TextBlock("gameOverText", "GAME OVER\nPress R to Restart");
@@ -72,6 +78,49 @@ export function initializeBabylonGUI(initialLives, initialTime, initialObjective
     timeoutContinueText.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
     timeoutContinueText.isVisible = false; // Hide initially
     adt.addControl(timeoutContinueText);
+
+    // --- Leaderboard Panel (Initially Hidden) ---
+    leaderboardPanel = new BABYLON.GUI.Rectangle("leaderboardPanel");
+    leaderboardPanel.width = "300px";
+    leaderboardPanel.height = "350px"; // Increased height for 10 entries + title
+    leaderboardPanel.cornerRadius = 20;
+    leaderboardPanel.color = "Orange";
+    leaderboardPanel.thickness = 2;
+    leaderboardPanel.background = "rgba(0, 0, 0, 0.7)";
+    leaderboardPanel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    leaderboardPanel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    leaderboardPanel.isVisible = false; // Hide initially
+    adt.addControl(leaderboardPanel);
+
+    const leaderboardStack = new BABYLON.GUI.StackPanel("leaderboardStack");
+    leaderboardStack.paddingTop = "10px";
+    leaderboardPanel.addControl(leaderboardStack);
+
+    leaderboardTitle = new BABYLON.GUI.TextBlock("leaderboardTitle", "High Scores");
+    leaderboardTitle.height = "40px";
+    leaderboardTitle.color = "Orange";
+    leaderboardTitle.fontSize = 24;
+    leaderboardTitle.fontWeight = "bold";
+    leaderboardStack.addControl(leaderboardTitle);
+
+    leaderboardScoresText = new BABYLON.GUI.TextBlock("leaderboardScores", "1. ---"); // Default text
+    leaderboardScoresText.height = "280px"; // Increased height for 10 entries
+    leaderboardScoresText.color = "white";
+    leaderboardScoresText.fontSize = 18;
+    leaderboardScoresText.textWrapping = true;
+    leaderboardScoresText.paddingTop = "10px";
+    leaderboardScoresText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER; // Center align scores
+    leaderboardStack.addControl(leaderboardScoresText);
+
+    // --- Leaderboard Restart Text (Initially Hidden, below leaderboard) ---
+    leaderboardRestartText = new BABYLON.GUI.TextBlock("leaderboardRestartText", "Press R to Restart");
+    leaderboardRestartText.color = "white";
+    leaderboardRestartText.fontSize = 24;
+    leaderboardRestartText.top = "200px"; // Adjusted position below the taller leaderboard panel
+    leaderboardRestartText.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    leaderboardRestartText.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    leaderboardRestartText.isVisible = false; // Hide initially
+    adt.addControl(leaderboardRestartText);
 
 
     // --- Controls Legend ---
@@ -114,9 +163,11 @@ export function initializeBabylonGUI(initialLives, initialTime, initialObjective
         missionObjectiveText,
         livesText,
         timerText,
+        scoreText, // Export the score text block
         gameOverText,
         timeoutContinueText, // Export the new text block
         controlsPanel
+        // Leaderboard elements are controlled via functions below, no need to export directly
     };
 }
 
@@ -274,7 +325,48 @@ export function showGameOverScreen(show) {
      if (timeoutContinueText) {
         timeoutContinueText.isVisible = false; // Ensure continue message is hidden when game over shows
     }
+    // Ensure leaderboard is hidden when game over screen is explicitly shown
+    // It will be shown separately by main.js logic if needed.
+    hideLeaderboard();
 }
+
+export function updateScoreText(score) {
+    if (scoreText) {
+        scoreText.text = `Score: ${score}`;
+    }
+}
+
+// --- Leaderboard Display Functions ---
+export function showLeaderboard(scoreEntries = []) { // Renamed parameter for clarity
+    if (leaderboardPanel && leaderboardScoresText) {
+        let scoreDisplayText = "No scores yet!";
+        if (scoreEntries.length > 0) {
+            // Format entries as "1. Nickname - Score"
+            scoreDisplayText = scoreEntries
+                .map((entry, index) => `${index + 1}. ${entry.name} - ${entry.score}`)
+                .join("\n");
+        }
+        leaderboardScoresText.text = scoreDisplayText;
+        leaderboardPanel.isVisible = true;
+    }
+     // Hide game over text when leaderboard is shown
+     if (gameOverText) {
+        gameOverText.isVisible = false; // Hide generic game over text
+    }
+     if (leaderboardRestartText) {
+        leaderboardRestartText.isVisible = true; // Show the specific restart text
+    }
+}
+
+export function hideLeaderboard() {
+    if (leaderboardPanel) {
+        leaderboardPanel.isVisible = false;
+    }
+    if (leaderboardRestartText) {
+        leaderboardRestartText.isVisible = false; // Hide the specific restart text
+    }
+}
+
 
 // --- Show/Hide Timeout Continue Message ---
 export function showTimeoutContinueMessage(show) {

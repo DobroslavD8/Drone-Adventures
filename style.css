@@ -60,6 +60,48 @@ html, body {
     z-index: 10; /* Ensure marker is above map background */
 }
 
+#nicknameOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Dark semi-transparent background */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 200; /* Ensure it's above everything else */
+    color: white;
+    text-align: center;
+}
+
+#nicknameOverlay h2 {
+    margin-bottom: 20px;
+}
+
+#nicknameOverlay input {
+    padding: 10px;
+    margin-bottom: 15px;
+    width: 200px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#nicknameOverlay button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #4CAF50; /* Green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+}
+
+#nicknameOverlay button:hover {
+    background-color: #45a049;
+}
+
 .target-marker {
     background-color: #ff0000; /* Red for target */
     border: 1px solid #ffffff;

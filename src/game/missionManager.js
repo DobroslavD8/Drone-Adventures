@@ -3,7 +3,7 @@
 // --- Mission Data ---
 // Note: We need access to obstacle positions (like buildings) if missions depend on them.
 // For now, using hardcoded vectors based on main.js. Ideally, pass obstacle refs or positions.
-const missionData = [
+export const missionData = [ // Added export keyword
     { // Mission 0
         pickupPos: new BABYLON.Vector3(-23, 0.1, 23), // Moved slightly NW away from Skyscraper 6
         deliveryPos: new BABYLON.Vector3(15, 14 + 0.1, 10), // Skyscraper 1 pos + NEW height
@@ -171,6 +171,12 @@ export function updateMissionLogic(drone, hud, gameState, missionState) {
         // Check proximity and vertical alignment (allow slightly larger vertical tolerance for landing)
         const yDifference = Math.abs(drone.getAbsolutePosition().y - deliveryLocation.position.y);
         if (distToDeliverySq < missionState.deliveryRadiusSq && yDifference < 1.5) { // Increased vertical tolerance
+            // --- Score Calculation ---
+            const baseScore = 100;
+            const timeBonus = Math.floor(Math.max(0, gameState.missionTimer) * 2); // Award 2 points per second left
+            gameState.score += baseScore + timeBonus;
+            // console.log(`Mission ${currentMissionIndex} complete! Score: ${gameState.score} (+${baseScore} +${timeBonus})`); // Debug log
+
             missionState.stage = "complete";
             missionState.hasPackage = false;
             // console.log(`Mission ${currentMissionIndex} complete!`); // Removed log
