@@ -66,7 +66,7 @@ const missionData = [
     }
 ];
 
-export const missionTimeLimit = 60.0; // Seconds per mission
+export const missionTimeLimit = 30.0; // Seconds per mission
 
 // --- Mission Setup Elements ---
 let pickupLocation = null;
@@ -180,14 +180,17 @@ export function updateMissionLogic(drone, hud, gameState, missionState) {
             if (gameState.currentMissionIndex < missionData.length) {
                 hud.missionObjectiveText.text = `Mission ${currentMissionIndex} Complete! Loading next...`;
                 hud.missionObjectiveText.color = "lime";
+                gameState.isMissionTransitioning = true; // PAUSE timer update
                 // Delay slightly before setting up next mission
                 setTimeout(() => {
                     // Re-call setupMission with the new index
                     setupMission(gameState.currentMissionIndex, hud, gameState, missionState);
+                    gameState.isMissionTransitioning = false; // RESUME timer update
                 }, 1500); // 1.5 second delay
             } else {
                 hud.missionObjectiveText.text = "All Missions Complete!";
                 hud.missionObjectiveText.color = "gold";
+                gameState.isMissionTransitioning = true; // Stop timer on final completion too
                 // Potentially disable controls or show final score
             }
             deliveryLocation.isVisible = false;

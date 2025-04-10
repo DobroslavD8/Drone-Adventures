@@ -16,7 +16,8 @@ export function initializeInput(scene) {
         down: false,
         rotateLeft: false, // Q
         rotateRight: false, // E
-        restart: false // R - Added for restart
+        restart: false, // R - For game over restart
+        confirmContinue: false // R - For timeout confirmation
     };
 
     // Keyboard event listeners
@@ -27,8 +28,10 @@ export function initializeInput(scene) {
                 switch (kbInfo.event.code) {
                     case "KeyW": inputState.forward = true; break;
                     case "KeyR": // Use code "KeyR"
-                        console.log("R key pressed (KEYDOWN)"); // Log R press
+                        // Set both flags, the game logic will decide which one to use
                         inputState.restart = true;
+                        inputState.confirmContinue = true;
+                        // console.log("R key pressed (KEYDOWN)"); // Keep commented or remove
                         break;
                     case "KeyS": inputState.backward = true; break;
                     case "KeyA": inputState.left = true; break; // Strafe left
@@ -43,7 +46,10 @@ export function initializeInput(scene) {
                 // Use event.code for layout-independent key identification
                 switch (kbInfo.event.code) {
                     case "KeyW": inputState.forward = false; break;
-                    case "KeyR": inputState.restart = false; break; // Reset restart flag on key up (Use code "KeyR")
+                    case "KeyR":
+                        inputState.restart = false; // Reset both flags on key up
+                        inputState.confirmContinue = false;
+                        break;
                     case "KeyS": inputState.backward = false; break;
                     case "KeyA": inputState.left = false; break;
                     case "KeyD": inputState.right = false; break;

@@ -4,7 +4,7 @@ let mapWorldWidth, mapWorldDepth;
 let mapWidthPx, mapHeightPx;
 
 // Store references to Babylon GUI elements
-let adt, altitudeText, speedText, missionObjectiveText, livesText, timerText, gameOverText, controlsPanel;
+let adt, altitudeText, speedText, missionObjectiveText, livesText, timerText, gameOverText, timeoutContinueText, controlsPanel;
 
 
 // --- Babylon.js GUI Setup ---
@@ -62,6 +62,17 @@ export function initializeBabylonGUI(initialLives, initialTime, initialObjective
     gameOverText.isVisible = false; // Hide initially
     adt.addControl(gameOverText);
 
+    // --- Timeout Continue Text (Initially Hidden) ---
+    timeoutContinueText = new BABYLON.GUI.TextBlock("timeoutContinueText", "Time Out!\nPress R to Continue");
+    timeoutContinueText.color = "orange";
+    timeoutContinueText.fontSize = 40;
+    timeoutContinueText.fontWeight = "bold";
+    timeoutContinueText.textWrapping = true;
+    timeoutContinueText.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    timeoutContinueText.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    timeoutContinueText.isVisible = false; // Hide initially
+    adt.addControl(timeoutContinueText);
+
 
     // --- Controls Legend ---
     controlsPanel = new BABYLON.GUI.StackPanel();
@@ -104,6 +115,7 @@ export function initializeBabylonGUI(initialLives, initialTime, initialObjective
         livesText,
         timerText,
         gameOverText,
+        timeoutContinueText, // Export the new text block
         controlsPanel
     };
 }
@@ -255,6 +267,25 @@ export function showGameOverScreen(show) {
     }
      if (missionObjectiveText) {
         missionObjectiveText.isVisible = !show; // Hide objective when game over is shown
+    }
+     if (missionObjectiveText) {
+        missionObjectiveText.isVisible = !show; // Hide objective when game over is shown
+    }
+     if (timeoutContinueText) {
+        timeoutContinueText.isVisible = false; // Ensure continue message is hidden when game over shows
+    }
+}
+
+// --- Show/Hide Timeout Continue Message ---
+export function showTimeoutContinueMessage(show) {
+    if (timeoutContinueText) {
+        timeoutContinueText.isVisible = show;
+    }
+    if (missionObjectiveText) {
+        missionObjectiveText.isVisible = !show; // Hide objective when continue message is shown
+    }
+     if (gameOverText) {
+        gameOverText.isVisible = false; // Ensure game over message is hidden when continue shows
     }
 }
 

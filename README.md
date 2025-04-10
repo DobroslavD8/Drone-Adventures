@@ -28,7 +28,8 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
 * **Physics Engine:** Realistic drone movement and collision detection
 * **Dynamic Lighting:** Day/night cycle with real-time shadows
 * **Responsive Controls:** Intuitive keyboard and mouse controls
-* **Mission System:** Progressive challenges and objectives
+* **Mission System:** Progressive challenges and objectives with a 30-second time limit per mission.
+* **Timeout Recovery:** If the timer runs out but you still have lives, press 'R' to reset the drone and timer to retry the current objective.
 * **Performance Optimized:** Smooth gameplay experience
 
 ## Getting Started
@@ -46,8 +47,11 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
 * **Camera:** 
   * Mouse movement to control camera angle
   * Click to lock/unlock mouse pointer
-* **Objective:** Collect targets while avoiding obstacles
-* **Mini-map:** Shows your position and target locations
+* **Objective:** Collect targets within the time limit while avoiding obstacles.
+* **Mini-map:** Shows your position and target locations.
+* **Restart/Continue:**
+  * Press 'R' when the game is over (no lives left) to restart the game from the beginning.
+  * Press 'R' when prompted after a mission timeout (with lives remaining) to continue the current mission attempt.
 
 ## Development
 

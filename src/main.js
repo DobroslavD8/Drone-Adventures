@@ -11,6 +11,7 @@ import {
     updateLivesText,
     updateTimerText,
     showGameOverScreen,
+    showTimeoutContinueMessage, // Import the new UI function
     updatePlayerMarker,
     addObstacleMarkerToMap // Renamed from addObstacleMarker
     // updateTargetMarker is now handled within missionManager
@@ -64,7 +65,9 @@ if (!BABYLON || !canvas) {
             isGameOver: false,
             invincibleTimer: 0,
             missionTimer: missionTimeLimit,
-            currentMissionIndex: 0
+            currentMissionIndex: 0,
+            isPausedForTimeout: false, // New state for timeout pause
+            isMissionTransitioning: false // New state for mission completion transition
         };
 
         // --- Mission State ---
@@ -281,10 +284,25 @@ if (!BABYLON || !canvas) {
             if (gameState.isGameOver) {
                 if (inputState.restart) {
                     resetGame();
-                    inputState.restart = false; // Consume the input
+                    // inputState.restart is reset inside initializeInput on keyup
                 }
                 scene.render(); // Still render the scene even if game over
                 return; // Skip game logic updates if game is over
+            }
+
+            // NEW: Handle Timeout Pause State
+            if (gameState.isPausedForTimeout) {
+                if (inputState.confirmContinue) {
+                    console.log("Continuing after timeout...");
+                    gameState.isPausedForTimeout = false;
+                    showTimeoutContinueMessage(false);
+                    resetDroneState(drone); // Reset drone position/velocity
+                    gameState.missionTimer = missionTimeLimit; // Reset timer
+                    // inputState.confirmContinue is reset inside initializeInput on keyup
+                }
+                // Don't update timer or anything else while paused, just render
+                scene.render();
+                return; // Skip rest of game logic while paused
             }
 
             // 2. Update Invincibility Timer
@@ -292,11 +310,14 @@ if (!BABYLON || !canvas) {
                 gameState.invincibleTimer -= deltaTime;
             }
 
-            // 3. Update Mission Timer & Check Expiration
-            gameState.missionTimer -= deltaTime;
-            updateTimerText(gameState.missionTimer); // Update HUD timer
+            // 3. Update Mission Timer & Check Expiration (only if not paused or transitioning)
+            if (!gameState.isPausedForTimeout && !gameState.isMissionTransitioning) {
+                gameState.missionTimer -= deltaTime;
+                updateTimerText(gameState.missionTimer); // Update HUD timer
+            }
 
-            if (gameState.missionTimer <= 0) {
+            // Check timer expiration ONLY if not already paused or transitioning
+            if (gameState.missionTimer <= 0 && !gameState.isPausedForTimeout && !gameState.isMissionTransitioning) {
                 console.log("Time ran out for mission!");
                 gameState.lives--;
                 updateLivesText(gameState.lives); // Update HUD lives
@@ -304,14 +325,14 @@ if (!BABYLON || !canvas) {
 
                 if (gameState.lives <= 0) {
                     gameState.isGameOver = true;
-                    showGameOverScreen(true);
+                    showGameOverScreen(true); // Show final game over
                     console.log("Game Over - Time Ran Out!");
                 } else {
-                    // Time ran out, but lives remain. Reset drone and timer for current mission.
-                    console.log("Time out! Resetting timer and position for current mission.");
-                    resetDroneState(drone); // Reset drone position/velocity
-                    gameState.missionTimer = missionTimeLimit; // Reset timer immediately
-                    // setupMission is NOT called here, player restarts current objective
+                    // Time ran out, but lives remain. PAUSE and prompt.
+                    console.log("Time out! Pausing. Press R to continue.");
+                    gameState.isPausedForTimeout = true; // Set pause flag
+                    showTimeoutContinueMessage(true); // Show the message
+                    // DO NOT reset drone or timer here. It happens when 'R' is pressed.
                 }
             }
 
