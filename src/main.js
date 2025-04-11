@@ -420,8 +420,81 @@ else {
     } // --- End startGame Function ---
 
 
+    // --- Floating Drones Mouse Follow Logic ---
+    const floatingDrones = document.querySelectorAll('.floating-drone');
+    if (nicknameOverlay && floatingDrones.length > 0) {
+        const lerpFactor = 0.04; // Smoothing factor (lower = smoother/slower)
+        const randomOffsetRange = 60; // Max pixels offset from cursor
+        const offsetChangeFrequency = 0.01; // Chance per frame to change target offset
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+
+        // Initialize positions and target offsets for each drone
+        const currentPositions = Array.from({ length: floatingDrones.length }).map(() => ({ x: mouseX, y: mouseY }));
+        const targetOffsets = Array.from({ length: floatingDrones.length }).map(() => ({ x: 0, y: 0 }));
+
+        // Function to get a new random offset
+        const getRandomOffset = () => ({
+            x: (Math.random() - 0.5) * 2 * randomOffsetRange,
+            y: (Math.random() - 0.5) * 2 * randomOffsetRange
+        });
+
+        // Initialize offsets randomly
+        targetOffsets.forEach((_, index) => {
+            targetOffsets[index] = getRandomOffset();
+        });
+
+
+        window.addEventListener('mousemove', (event) => { // Attach listener to window
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        });
+
+        function updateDronePositions() {
+            floatingDrones.forEach((drone, index) => {
+                // Occasionally change the target offset for randomness
+                if (Math.random() < offsetChangeFrequency) {
+                    targetOffsets[index] = getRandomOffset();
+                }
+
+                const offset = targetOffsets[index];
+                const currentPos = currentPositions[index];
+
+                // Target position is mouse + current random offset
+                const targetX = mouseX + offset.x;
+                const targetY = mouseY + offset.y;
+
+                // Lerp each drone towards its target position
+                const dx = targetX - currentPos.x;
+                const dy = targetY - currentPos.y;
+
+                currentPos.x += dx * lerpFactor;
+                currentPos.y += dy * lerpFactor;
+
+                // Use transform with centering offset
+                drone.style.transform = `translate(${currentPos.x - 25}px, ${currentPos.y - 25}px)`;
+            });
+
+            // Continue the animation loop only if the overlay is visible
+            if (nicknameOverlay.style.display !== 'none') {
+                requestAnimationFrame(updateDronePositions);
+            }
+        }
+
+        // Start the animation loop
+        requestAnimationFrame(updateDronePositions);
+    }
+    // --- End Floating Drones Logic ---
+
+
     // --- Initial Setup: Add Event Listener for Nickname ---
     startGameBtn.addEventListener('click', () => {
+        // Hide floating drones and overlay when game starts
+        const dronesToHide = document.querySelectorAll('.floating-drone');
+        dronesToHide.forEach(drone => drone.style.display = 'none'); // Hide the drones
+        nicknameOverlay.style.display = 'none'; // Hide overlay
+
         let nickname = nicknameInput.value.trim();
         if (!nickname) {
             nickname = "Guest"; // Default to "Guest" if empty

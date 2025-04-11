@@ -43,7 +43,7 @@ export async function createScene(engine) {
 
     // Create a light
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-    light.intensity = 0.7;
+    light.intensity = 0.77; // Increased intensity by ~10%
 
     // Create ground using a thin Box instead of CreateGround
     const groundSize = 100;

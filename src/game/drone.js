@@ -20,7 +20,7 @@ export function createDrone(scene) {
     droneVisual.parent = physicsSphere;
 
     // Load the GLB model asynchronously
-    BABYLON.SceneLoader.ImportMeshAsync("", "src/graphic-models/", "drone.glb", scene).then((result) => {
+    BABYLON.SceneLoader.ImportMeshAsync("", "src/graphic-models/", "drone.glb", scene).then((result) => { // Reverted filename
         const droneMesh = result.meshes[0]; // Assuming the main mesh is the first one
         if (droneMesh) {
             droneMesh.name = "droneModel";
@@ -38,12 +38,12 @@ export function createDrone(scene) {
             // Position adjustment within the visual node (if needed, e.g., to center it)
             droneMesh.position = new BABYLON.Vector3(0, -0.1, 0); // Small adjustment down
 
-            console.log("Drone GLB model loaded and attached.");
+            console.log("Drone GLB model loaded and attached."); // Reverted log message
         } else {
-            console.error("Failed to load drone mesh from GLB.");
+            console.error("Failed to load drone mesh from GLB."); // Reverted log message
         }
     }).catch(error => {
-        console.error("Error loading drone GLB:", error);
+        console.error("Error loading drone GLB:", error); // Reverted log message
     });
 
 
@@ -140,15 +140,63 @@ export function updateDrone(drone, inputState, scene, camera) {
         impostor.physicsBody.quaternion.copy(rotationQuaternion);
     }
 
-    // --- REMOVED Manual Boundary Checks & Position Corrections ---
-    // Relying on physics engine for collisions with ground/obstacles.
-    // Boundary walls could be added as static physics objects if strict boundaries are needed.
-    // --- End REMOVED Section ---
+    // --- Play Area Boundary Checks ---
+    const currentPosition = drone.getAbsolutePosition(); // Get potentially updated position
+    const currentVelocity = impostor.getLinearVelocity();
+    let positionClamped = false;
+    let velocityModified = false;
+
+    // Check X boundaries
+    if (currentPosition.x < playAreaMinX) {
+        drone.position.x = playAreaMinX;
+        if (currentVelocity && currentVelocity.x < 0) {
+            impostor.setLinearVelocity(new BABYLON.Vector3(0, currentVelocity.y, currentVelocity.z));
+            velocityModified = true;
+        }
+        positionClamped = true;
+    } else if (currentPosition.x > playAreaMaxX) {
+        drone.position.x = playAreaMaxX;
+        if (currentVelocity && currentVelocity.x > 0) {
+            impostor.setLinearVelocity(new BABYLON.Vector3(0, currentVelocity.y, currentVelocity.z));
+            velocityModified = true;
+        }
+        positionClamped = true;
+    }
+
+    // Check Z boundaries
+    if (currentPosition.z < playAreaMinZ) {
+        drone.position.z = playAreaMinZ;
+        // Use potentially modified velocity from X check
+        const vel = velocityModified ? impostor.getLinearVelocity() : currentVelocity;
+        if (vel && vel.z < 0) {
+            impostor.setLinearVelocity(new BABYLON.Vector3(vel.x, vel.y, 0));
+            velocityModified = true; // Mark as modified again if Z caused change
+        }
+        positionClamped = true;
+    } else if (currentPosition.z > playAreaMaxZ) {
+        drone.position.z = playAreaMaxZ;
+        // Use potentially modified velocity from X check
+        const vel = velocityModified ? impostor.getLinearVelocity() : currentVelocity;
+        if (vel && vel.z > 0) {
+            impostor.setLinearVelocity(new BABYLON.Vector3(vel.x, vel.y, 0));
+            velocityModified = true; // Mark as modified again if Z caused change
+        }
+        positionClamped = true;
+    }
+
+    if (positionClamped) {
+        // If position was clamped, we need to ensure the physics body's transform matches
+        // This might be redundant if setLinearVelocity already updates things, but safer.
+        impostor.physicsBody.position.copy(drone.position);
+        console.log("Boundary limit reached.");
+    }
+    // --- End Play Area Boundary Checks ---
+
 
     // --- Altitude Limit Check (Re-added) ---
-    // Apply this check *after* physics forces but before visual updates
-    const currentPosition = drone.getAbsolutePosition(); // Get potentially updated position
-    if (currentPosition.y > maxAltitude) {
+    // Apply this check *after* boundary checks and physics forces but before visual updates
+    const currentPosForAltitudeCheck = drone.getAbsolutePosition(); // Get potentially updated position
+    if (currentPosForAltitudeCheck.y > maxAltitude) {
         drone.position.y = maxAltitude; // Clamp position
         // Optional: Zero out upward velocity to prevent bouncing off the ceiling
         const currentVelocity = impostor.getLinearVelocity();

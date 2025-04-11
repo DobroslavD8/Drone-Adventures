@@ -1,5 +1,5 @@
 html, body {
-    /* overflow: hidden; Removed for testing */
+    overflow: hidden; /* Prevent scrollbars */
     width: 100%;
     height: 100%;
     margin: 0;
@@ -66,7 +66,10 @@ html, body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); /* Dark semi-transparent background */
+    background-image: url('src/images/background.png'); /* Added background */
+    background-size: cover; /* Ensure image covers the area */
+    background-position: center; /* Center the image */
+    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker overlay for text readability */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -76,8 +79,27 @@ html, body {
     text-align: center;
 }
 
+.floating-drone {
+    position: fixed; /* Changed from absolute to fixed */
+    width: 50px; /* Adjust size as needed */
+    height: 50px;
+    z-index: 201; /* Above overlay background (200), below content (202) */
+    pointer-events: none; /* Prevent drones from interfering with mouse events */
+    /* transition: transform 0.1s ease-out; */ /* Removed transition */
+}
+
+#nicknameContent { /* Style for the wrapper */
+    background-color: rgba(50, 50, 50, 0.75); /* Darker semi-transparent background */
+    padding: 30px 40px; /* Add padding around the content */
+    position: relative; /* Needed for z-index stacking */
+    z-index: 202; /* Ensure content is above floating drones */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+}
+
 #nicknameOverlay h2 {
     margin-bottom: 20px;
+    margin-top: 0; /* Remove default top margin if any */
 }
 
 #nicknameOverlay input {

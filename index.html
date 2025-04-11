@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drone Adventures</title>
+    <link rel="icon" type="image/png" href="src/images/favicon.png"> <!-- Added favicon -->
     <link rel="stylesheet" href="style.css">
     <!-- Babylon.js CDN -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -18,10 +19,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-database-compat.js"></script>
 </head>
 <body>
+    <!-- Floating drones (moved outside overlay) -->
+    <img src="src/images/favicon.png" class="floating-drone" id="drone1">
+    <img src="src/images/favicon.png" class="floating-drone" id="drone2">
+    <img src="src/images/favicon.png" class="floating-drone" id="drone3">
+    <!-- End floating drones -->
+
     <div id="nicknameOverlay">
-        <h2>Enter Your Nickname</h2>
-        <input type="text" id="nicknameInput" placeholder="Nickname" maxlength="15">
-        <button id="startGameBtn">Start Game</button>
+        <div id="nicknameContent"> <!-- Added wrapper div -->
+            <h2>Enter Your Nickname</h2>
+            <input type="text" id="nicknameInput" placeholder="Nickname" maxlength="15">
+            <button id="startGameBtn">Start Game</button>
+        </div> <!-- End wrapper div -->
     </div>
     <canvas id="renderCanvas"></canvas>
     <div id="mapContainer" style="position: fixed; bottom: 20px; right: 20px; width: 200px; height: 150px; background-color: rgba(50, 50, 50, 0.7); border: 1px solid #ffffff; z-index: 100; overflow: hidden;">
