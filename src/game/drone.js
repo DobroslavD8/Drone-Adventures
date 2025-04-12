@@ -33,7 +33,7 @@ export function createDrone(scene) {
 
             // Rotate if necessary (GLB models often face +Z or +X, Babylon uses +Z forward)
             // Rotating 90 degrees (PI/2) around Y-axis to potentially align forward direction.
-            droneMesh.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, Math.PI / 2, 0);
+            // droneMesh.rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, Math.PI / 2, 0); // REMOVED initial visual mesh rotation
 
             // Position adjustment within the visual node (if needed, e.g., to center it)
             droneMesh.position = new BABYLON.Vector3(0, -0.1, 0); // Small adjustment down
@@ -58,6 +58,7 @@ const rotationSpeed = 1.5; // Radians per second for yaw
 const stabilizationForceFactor = 2.0; // Damping factor when no horizontal input
 const maxTiltAngle = 0.3; // Radians (approx 17 degrees) for visual tilt
 const tiltLerpSpeed = 0.08; // Controls how quickly the drone tilts/returns visually
+const selfRightingFactor = 2.5; // How strongly the drone tries to right itself
 
 // --- Play Area Boundaries ---
 const playAreaMinX = -49;
@@ -77,6 +78,8 @@ export function updateDrone(drone, inputState, scene, camera) {
 
     const deltaTime = scene.getEngine().getDeltaTime() / 1000.0;
     const impostor = drone.physicsImpostor;
+    // Get current velocity once for use throughout the function
+    const currentVelocity = impostor.getLinearVelocity();
 
     // --- Drone Physics Control Logic ---
 
@@ -94,6 +97,9 @@ export function updateDrone(drone, inputState, scene, camera) {
     if (inputState.backward) moveForce.subtractInPlace(forwardDir);
     if (inputState.left) moveForce.subtractInPlace(rightDir); // Strafe left relative to camera
     if (inputState.right) moveForce.addInPlace(rightDir); // Strafe right relative to camera
+
+    // Check if there is active horizontal input before scaling
+    const hasHorizontalInput = (inputState.forward || inputState.backward || inputState.left || inputState.right);
 
     if (moveForce.lengthSquared() > 0) {
         moveForce.normalize().scaleInPlace(moveForceMagnitude);
@@ -118,7 +124,8 @@ export function updateDrone(drone, inputState, scene, camera) {
     impostor.applyForce(moveForce.add(verticalForce), drone.getAbsolutePosition());
 
     // Apply stabilization/damping force against horizontal movement when no input
-    if (moveForce.lengthSquared() === 0) {
+    // This force helps slow down linear movement when keys are released.
+    if (!hasHorizontalInput) { // Use the input check here
         const currentHorizontalVelocity = impostor.getLinearVelocity().clone();
         currentHorizontalVelocity.y = 0; // Ignore vertical component
         if (currentHorizontalVelocity.lengthSquared() > 0.01) { // Apply only if moving significantly
@@ -127,22 +134,9 @@ export function updateDrone(drone, inputState, scene, camera) {
          }
     }
 
-    // --- Manual Rotation (Yaw) - Removed ---
-    // let rotationChange = 0;
-    // if (inputState.rotateLeft) rotationChange -= rotationSpeed * deltaTime; // Removed
-    // if (inputState.rotateRight) rotationChange += rotationSpeed * deltaTime; // Removed
-    //
-    // // Apply rotation change to the physics sphere.
-    // if (rotationChange !== 0) {
-    //     drone.rotation.y += rotationChange;
-    //     // Update the physics body's quaternion to match the Euler rotation
-    //     const rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, drone.rotation.y, 0);
-    //     impostor.physicsBody.quaternion.copy(rotationQuaternion);
-    // }
-
     // --- Play Area Boundary Checks ---
     const currentPosition = drone.getAbsolutePosition(); // Get potentially updated position
-    const currentVelocity = impostor.getLinearVelocity();
+    // Use the currentVelocity declared earlier
     let positionClamped = false;
     let velocityModified = false;
 
@@ -188,7 +182,7 @@ export function updateDrone(drone, inputState, scene, camera) {
         // If position was clamped, we need to ensure the physics body's transform matches
         // This might be redundant if setLinearVelocity already updates things, but safer.
         impostor.physicsBody.position.copy(drone.position);
-        console.log("Boundary limit reached.");
+        // console.log("Boundary limit reached."); // Removed log
     }
     // --- End Play Area Boundary Checks ---
 
@@ -199,16 +193,91 @@ export function updateDrone(drone, inputState, scene, camera) {
     if (currentPosForAltitudeCheck.y > maxAltitude) {
         drone.position.y = maxAltitude; // Clamp position
         // Optional: Zero out upward velocity to prevent bouncing off the ceiling
-        const currentVelocity = impostor.getLinearVelocity();
+        // Use the currentVelocity declared earlier
         if (currentVelocity && currentVelocity.y > 0) {
             impostor.setLinearVelocity(new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z));
         }
-         console.log("Altitude limit reached.");
+         // console.log("Altitude limit reached."); // Removed log
     }
     // --- End Altitude Limit Check ---
 
 
-    // --- Visual Tilt Logic ---
+    // --- Drone Rotation (Yaw) and Self-Righting Logic ---
+    const horizontalVelocityForYaw = new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z); // Renamed for clarity
+    const speedThreshold = 0.2; // Minimum speed to trigger rotation based on velocity
+    let yawAngularVelocity = BABYLON.Vector3.Zero(); // Initialize yaw velocity
+
+    // Calculate target yaw velocity only if there is active horizontal INPUT
+    if (hasHorizontalInput && horizontalVelocityForYaw.lengthSquared() > speedThreshold * speedThreshold) {
+        // --- Calculate Yaw Angular Velocity using Vector Math ---
+        const currentPhysQuat = impostor.physicsBody.quaternion;
+        const currentQuaternionBabylon = new BABYLON.Quaternion(
+            currentPhysQuat.x, currentPhysQuat.y, currentPhysQuat.z, currentPhysQuat.w
+        );
+        const currentForward = new BABYLON.Vector3(0, 0, 1); // Local forward (+Z)
+        currentForward.rotateByQuaternionToRef(currentQuaternionBabylon, currentForward);
+        const targetDirection = horizontalVelocityForYaw.normalizeToNew();
+        const rotationAxis = BABYLON.Vector3.Cross(currentForward, targetDirection);
+        if (rotationAxis.lengthSquared() > 0.001) {
+             rotationAxis.normalize();
+        } else {
+             rotationAxis.copyFrom(BABYLON.Vector3.Up());
+        }
+        const dotProduct = BABYLON.Scalar.Clamp(BABYLON.Vector3.Dot(currentForward, targetDirection), -1, 1);
+        let rotationAngle = Math.acos(dotProduct);
+        rotationAngle *= -1; // Fix reversed rotation
+        const yawRotationSpeedFactor = 0.5; // Reduced sensitivity
+        yawAngularVelocity = rotationAxis.scale(rotationAngle * yawRotationSpeedFactor);
+
+        if (dotProduct < -0.999 && Math.abs(rotationAngle) > 0.1) {
+             yawAngularVelocity = new BABYLON.Vector3(0, yawRotationSpeedFactor * Math.PI, 0);
+        } else if (dotProduct > 0.999 || Math.abs(rotationAngle) < 0.01) {
+             yawAngularVelocity = BABYLON.Vector3.Zero();
+        }
+    }
+
+    // --- Calculate Self-Righting Angular Velocity ---
+    let selfRightingAngularVelocity = BABYLON.Vector3.Zero();
+    const currentPhysQuatSR = impostor.physicsBody.quaternion; // Get current quaternion again
+    const currentQuatBabylonSR = new BABYLON.Quaternion(
+        currentPhysQuatSR.x, currentPhysQuatSR.y, currentPhysQuatSR.z, currentPhysQuatSR.w
+    );
+    // Get the drone's local up vector in world space
+    const localUp = new BABYLON.Vector3(0, 1, 0);
+    localUp.rotateByQuaternionToRef(currentQuatBabylonSR, localUp);
+    // Calculate the axis needed to rotate localUp towards world Up (0,1,0)
+    const rightingAxis = BABYLON.Vector3.Cross(localUp, BABYLON.Vector3.Up());
+    const upDot = BABYLON.Vector3.Dot(localUp, BABYLON.Vector3.Up());
+    // Only apply righting torque if significantly tilted and axis is valid
+    if (upDot < 0.99 && rightingAxis.lengthSquared() > 0.001) {
+        rightingAxis.normalize();
+        const rightingAngle = Math.acos(BABYLON.Scalar.Clamp(upDot, -1, 1));
+        // Apply torque proportional to the angle, stronger than yaw
+        selfRightingAngularVelocity = rightingAxis.scale(rightingAngle * selfRightingFactor);
+    }
+
+    // --- Combine and Apply Angular Velocities ---
+    // If there's no input, prioritize stopping yaw rotation.
+    // Always apply self-righting torque if needed.
+    let finalAngularVelocity;
+    if (!hasHorizontalInput) {
+        // Damp existing yaw velocity slightly if stopping? Or just zero it? Let's zero it.
+        const currentAV = impostor.getAngularVelocity() || BABYLON.Vector3.Zero();
+        finalAngularVelocity = new BABYLON.Vector3(0, 0, 0); // Start with zero yaw/pitch/roll
+        // Add only the self-righting component if needed
+        finalAngularVelocity.addInPlace(selfRightingAngularVelocity);
+        // Apply damping to the non-righting axes if needed? Maybe not necessary if setting directly.
+    } else {
+        // Combine calculated yaw and self-righting velocities
+        finalAngularVelocity = yawAngularVelocity.add(selfRightingAngularVelocity);
+    }
+
+    impostor.setAngularVelocity(finalAngularVelocity);
+
+    // --- End Drone Rotation (Yaw) and Self-Righting Logic ---
+
+
+    // --- Visual Tilt Logic --- // Re-enabled
     const droneVisual = drone.getChildren().find(node => node.name === "droneVisual"); // Find the visual node
     if (droneVisual) {
         if (!droneVisual.rotationQuaternion) {
@@ -220,26 +289,28 @@ export function updateDrone(drone, inputState, scene, camera) {
         const localForward = BABYLON.Vector3.TransformNormal(BABYLON.Axis.Z, droneMatrix).normalize();
         const localRight = BABYLON.Vector3.TransformNormal(BABYLON.Axis.X, droneMatrix).normalize();
 
-        // Get current horizontal velocity
-        const currentVelocity = impostor.getLinearVelocity();
-        const horizontalVelocity = new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z);
+        // Use the already fetched currentVelocity
+        const horizontalVelocityForTilt = new BABYLON.Vector3(currentVelocity.x, 0, currentVelocity.z); // Renamed for clarity
 
-        // Project velocity onto drone's local axes
-        const forwardSpeed = BABYLON.Vector3.Dot(horizontalVelocity, localForward);
-        const rightSpeed = BABYLON.Vector3.Dot(horizontalVelocity, localRight);
+        // Project velocity onto drone's local axes (relative to physics body orientation)
+        const forwardSpeed = BABYLON.Vector3.Dot(horizontalVelocityForTilt, localForward);
+        const rightSpeed = BABYLON.Vector3.Dot(horizontalVelocityForTilt, localRight);
 
-        // Calculate target tilt angles (pitch based on forward, roll based on right)
+        // --- Calculate Target Tilt (Pitch and Roll) ONLY ---
+        // Yaw is handled by the physics body rotation logic above
         const targetPitch = -BABYLON.Scalar.Clamp(forwardSpeed * 0.1, -maxTiltAngle, maxTiltAngle);
         const targetRoll = BABYLON.Scalar.Clamp(rightSpeed * 0.1, -maxTiltAngle, maxTiltAngle);
 
         // Create target rotation quaternion from Euler angles (pitch, yaw=0, roll)
+        // Yaw is 0 here because the visual node's rotation is relative to the physics body,
+        // which is already handling the main yaw rotation.
         const targetTiltQuaternion = BABYLON.Quaternion.FromEulerAngles(targetPitch, 0, targetRoll);
 
         // Smoothly interpolate the visual drone's rotation towards the target tilt
         BABYLON.Quaternion.SlerpToRef(
             droneVisual.rotationQuaternion,
-            targetTiltQuaternion,
-            tiltLerpSpeed,
+            targetTiltQuaternion, // Use the tilt-only target
+            tiltLerpSpeed,        // Use original tilt lerp speed
             droneVisual.rotationQuaternion
         );
     }
@@ -265,7 +336,12 @@ export function resetDroneState(drone) {
     impostor.setAngularVelocity(BABYLON.Vector3.Zero());
     // Update physics body quaternion to match mesh rotation (important!)
     const rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, drone.rotation.y, 0);
-    impostor.physicsBody.quaternion.copy(rotationQuaternion);
+    // Set components individually to avoid potential copy issues
+    impostor.physicsBody.quaternion.x = rotationQuaternion.x;
+    impostor.physicsBody.quaternion.y = rotationQuaternion.y;
+    impostor.physicsBody.quaternion.z = rotationQuaternion.z;
+    impostor.physicsBody.quaternion.w = rotationQuaternion.w;
+    // impostor.physicsBody.quaternion.copy(rotationQuaternion); // Potential issue
 
     // Reset visual tilt
     const droneVisual = drone.getChildren().find(node => node.name === "droneVisual");

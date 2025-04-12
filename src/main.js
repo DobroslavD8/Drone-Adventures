@@ -184,8 +184,8 @@ else {
         const droneMass = 1.0, droneRestitution = 0.1, droneFriction = 0.3;
         const droneOptions = { mass: droneMass, restitution: droneRestitution, friction: droneFriction, collisionGroup: 1, collisionMask: -1 };
         drone.physicsImpostor = new BABYLON.PhysicsImpostor(drone, BABYLON.PhysicsImpostor.SphereImpostor, droneOptions, scene);
-        drone.physicsImpostor.physicsBody.angularDamping = 1.0;
-        drone.physicsImpostor.physicsBody.fixedRotation = true; // Restore fixed rotation
+        drone.physicsImpostor.physicsBody.angularDamping = 0.1; // Significantly reduced damping to allow rotation
+        drone.physicsImpostor.physicsBody.fixedRotation = false; // Allow rotation
         drone.physicsImpostor.physicsBody.updateMassProperties();
 
         // --- Input Setup ---
@@ -353,7 +353,7 @@ else {
             // 2. Handle Timeout Pause State
             if (gameState.isPausedForTimeout) {
                 if (inputState.confirmContinue) {
-                    console.log("Continuing after timeout...");
+                    // console.log("Continuing after timeout..."); // Removed log
                     gameState.isPausedForTimeout = false;
                     showTimeoutContinueMessage(false);
                     resetDroneState(drone);

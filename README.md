@@ -19,21 +19,24 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
     │   └── physics.js # Enables physics engine (Cannon.js) and sets parameters
     ├── ui/            # User interface elements
     │   └── uiManager.js # Babylon.js GUI (HUD, game over, controls) & HTML minimap setup/updates
-    └── graphic-models/ # 3D models (drone.glb, skyscraper.glb)
+    ├── graphic-models/ # 3D models (drone.glb, skyscraper.glb)
+    └── images/         # UI images (background.png, favicon.png)
 ```
 
 ## Features
 
 * **3D Environment:** Immersive world built with Babylon.js
-* **Physics Engine:** Realistic drone movement and collision detection
-* **Dynamic Lighting:** Day/night cycle with real-time shadows
+* **Physics Engine:** Realistic drone movement and collision detection (with world boundaries)
+* **Realistic Rotation:** Drone automatically turns to face its direction of movement and includes a self-righting mechanism to prevent staying flipped over.
+* **Dynamic Lighting:** Day/night cycle with real-time shadows (slightly increased brightness).
 * **Responsive Controls:** Intuitive keyboard and mouse controls
 * **Mission System:** Progressive challenges and objectives with a 30-second time limit per mission.
 * **Scoring System:** Earn points for completing missions quickly.
-* **Persistent Leaderboard:** Top 10 scores are saved globally using Firebase Realtime Database.
-* **Nickname Prompt:** Enter a nickname before starting the game.
+* **Persistent Leaderboard:** Top 10 scores are saved globally using Firebase Realtime Database, with medals (🥇🥈🥉) for the top 3.
+* **Nickname Prompt:** Enter a nickname before starting the game (features background image and animated drones).
 * **Timeout Recovery:** If the timer runs out but you still have lives, press 'R' to reset the drone and timer to retry the current objective.
 * **Performance Optimized:** Smooth gameplay experience
+* **Favicon:** Custom favicon added.
 
 ## Getting Started
 
@@ -54,7 +57,7 @@ A browser-based 3D drone simulation game built with modern web technologies. Nav
   * W/A/S/D keys to tilt the drone for directional movement
   * Spacebar to increase thrust (up)
   * Shift to decrease thrust (down)
-* **Camera:** 
+* **Camera:**
   * Mouse movement to control camera angle
   * Click to lock/unlock mouse pointer
 * **Objective:** Collect targets within the time limit while avoiding obstacles.
