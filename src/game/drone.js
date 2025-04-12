@@ -38,7 +38,7 @@ export function createDrone(scene) {
             // Position adjustment within the visual node (if needed, e.g., to center it)
             droneMesh.position = new BABYLON.Vector3(0, -0.1, 0); // Small adjustment down
 
-            console.log("Drone GLB model loaded and attached."); // Reverted log message
+            // console.log("Drone GLB model loaded and attached."); // Removed log
         } else {
             console.error("Failed to load drone mesh from GLB."); // Reverted log message
         }
@@ -124,21 +124,21 @@ export function updateDrone(drone, inputState, scene, camera) {
         if (currentHorizontalVelocity.lengthSquared() > 0.01) { // Apply only if moving significantly
              const stabilizationForce = currentHorizontalVelocity.scale(-stabilizationForceFactor); // Force opposite to current velocity
              impostor.applyForce(stabilizationForce, drone.getAbsolutePosition());
-        }
+         }
     }
 
-    // Manual Rotation (Yaw) - Applied to the physics sphere's rotation directly
-    let rotationChange = 0;
-    if (inputState.rotateLeft) rotationChange -= rotationSpeed * deltaTime;
-    if (inputState.rotateRight) rotationChange += rotationSpeed * deltaTime;
-
-    // Apply rotation change to the physics sphere.
-    if (rotationChange !== 0) {
-        drone.rotation.y += rotationChange;
-        // Update the physics body's quaternion to match the Euler rotation
-        const rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, drone.rotation.y, 0);
-        impostor.physicsBody.quaternion.copy(rotationQuaternion);
-    }
+    // --- Manual Rotation (Yaw) - Removed ---
+    // let rotationChange = 0;
+    // if (inputState.rotateLeft) rotationChange -= rotationSpeed * deltaTime; // Removed
+    // if (inputState.rotateRight) rotationChange += rotationSpeed * deltaTime; // Removed
+    //
+    // // Apply rotation change to the physics sphere.
+    // if (rotationChange !== 0) {
+    //     drone.rotation.y += rotationChange;
+    //     // Update the physics body's quaternion to match the Euler rotation
+    //     const rotationQuaternion = BABYLON.Quaternion.FromEulerAngles(0, drone.rotation.y, 0);
+    //     impostor.physicsBody.quaternion.copy(rotationQuaternion);
+    // }
 
     // --- Play Area Boundary Checks ---
     const currentPosition = drone.getAbsolutePosition(); // Get potentially updated position

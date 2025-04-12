@@ -14,8 +14,8 @@ export function initializeInput(scene) {
         right: false,
         up: false,
         down: false,
-        rotateLeft: false, // Q
-        rotateRight: false, // E
+        // rotateLeft: false, // Q - Removed
+        // rotateRight: false, // E - Removed
         restart: false, // R - For game over restart
         confirmContinue: false // R - For timeout confirmation
     };
@@ -36,8 +36,8 @@ export function initializeInput(scene) {
                     case "KeyS": inputState.backward = true; break;
                     case "KeyA": inputState.left = true; break; // Strafe left
                     case "KeyD": inputState.right = true; break; // Strafe right
-                    case "KeyQ": inputState.rotateLeft = true; break; // Rotate left
-                    case "KeyE": inputState.rotateRight = true; break; // Rotate right
+                    // case "KeyQ": inputState.rotateLeft = true; break; // Rotate left - Removed
+                    // case "KeyE": inputState.rotateRight = true; break; // Rotate right - Removed
                     case "Space": inputState.up = true; break; // Ascend (Use code "Space")
                     case "ShiftLeft": case "ShiftRight": inputState.down = true; break; // Descend (Already using code)
                 }
@@ -53,8 +53,8 @@ export function initializeInput(scene) {
                     case "KeyS": inputState.backward = false; break;
                     case "KeyA": inputState.left = false; break;
                     case "KeyD": inputState.right = false; break;
-                    case "KeyQ": inputState.rotateLeft = false; break;
-                    case "KeyE": inputState.rotateRight = false; break;
+                    // case "KeyQ": inputState.rotateLeft = false; break; // Removed
+                    // case "KeyE": inputState.rotateRight = false; break; // Removed
                     case "Space": inputState.up = false; break; // (Use code "Space")
                     case "ShiftLeft": case "ShiftRight": inputState.down = false; break; // (Already using code)
                 }

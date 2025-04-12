@@ -109,7 +109,7 @@ export async function createScene(engine) {
             clone.receiveShadows = true;
 
             // --- Create Fixed-Size Invisible Physics Box ---
-            console.log(`[${name}] Using fixed physics box size: W=${width}, H=${height}, D=${depth}`);
+            // console.log(`[${name}] Using fixed physics box size: W=${width}, H=${height}, D=${depth}`); // Removed log
 
             const physicsBox = BABYLON.MeshBuilder.CreateBox(`${name}_physicsBox`, {
                 width: width,   // Use argument
@@ -121,7 +121,7 @@ export async function createScene(engine) {
             physicsBox.position = basePosition.clone(); // Start at base X,Z
             physicsBox.position.y += height / 2;   // Move center up by half of passed height
             physicsBox.isVisible = false; // Make it invisible
-            console.log(`[${name}] Physics box final position (center): X=${physicsBox.position.x.toFixed(2)}, Y=${physicsBox.position.y.toFixed(2)}, Z=${physicsBox.position.z.toFixed(2)}`);
+            // console.log(`[${name}] Physics box final position (center): X=${physicsBox.position.x.toFixed(2)}, Y=${physicsBox.position.y.toFixed(2)}, Z=${physicsBox.position.z.toFixed(2)}`); // Removed log
 
             // Parent the visual clone to the physics box
             clone.parent = physicsBox;
@@ -129,7 +129,7 @@ export async function createScene(engine) {
             // Set the visual clone's LOCAL position relative to the physics box
             // Assuming both pivots are centered, move visual down by half-height
             clone.position = new BABYLON.Vector3(0, -height / 2, 0); // Use height argument here
-            console.log(`[${name}] Visual clone LOCAL position set relative to parent physics box.`);
+            // console.log(`[${name}] Visual clone LOCAL position set relative to parent physics box.`); // Removed log
 
             obstacles.push(physicsBox); // Add physics box to obstacles for impostor creation
             // --- End Invisible Physics Box ---
@@ -200,7 +200,7 @@ export async function createScene(engine) {
     // --- End Barrels ---
 
 
-    console.log("Scene, camera, light, ground, obstacles, trees, and barrels created.");
+    // console.log("Scene, camera, light, ground, obstacles, trees, and barrels created."); // Removed log
 
     // Return all created elements, including barrels
     return { scene, camera, light, ground, obstacles, barrels };

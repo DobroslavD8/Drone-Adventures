@@ -143,11 +143,11 @@ export function initializeBabylonGUI(initialLives, initialTime, initialObjective
         "Move: WASD\n" +
         "Ascend: Space\n" +
         "Descend: Shift\n" +
-        "Rotate: Q / E\n" +
+        // "Rotate: Q / E\n" + // Removed rotation text
         "Look: Mouse\n" +
         "Restart (Game Over): R" // Added Restart info
     );
-    controlsText.height = "120px"; // Adjust height as needed
+    controlsText.height = "100px"; // Adjust height as needed (reduced)
     controlsText.color = "white";
     controlsText.textHorizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
     controlsText.textWrapping = true;
@@ -341,9 +341,15 @@ export function showLeaderboard(scoreEntries = []) { // Renamed parameter for cl
     if (leaderboardPanel && leaderboardScoresText) {
         let scoreDisplayText = "No scores yet!";
         if (scoreEntries.length > 0) {
-            // Format entries as "1. Nickname - Score"
+            // Format entries with medals for top 3
             scoreDisplayText = scoreEntries
-                .map((entry, index) => `${index + 1}. ${entry.name} - ${entry.score}`)
+                .map((entry, index) => {
+                    let prefix = `${index + 1}.`;
+                    if (index === 0) prefix = "🥇";
+                    else if (index === 1) prefix = "🥈";
+                    else if (index === 2) prefix = "🥉";
+                    return `${prefix} ${entry.name} - ${entry.score}`;
+                })
                 .join("\n");
         }
         leaderboardScoresText.text = scoreDisplayText;

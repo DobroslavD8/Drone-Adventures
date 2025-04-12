@@ -34,6 +34,7 @@ import {
 // Attempt to suppress specific pointer warnings if BABYLON is loaded globally
 try {
     if (typeof BABYLON !== 'undefined' && BABYLON.Logger) {
+        // Patch Warn
         const originalWarn = BABYLON.Logger.Warn;
         const warningSubstringToSuppress = "makes sense to control ONE camera property with each pointer axis";
         BABYLON.Logger.Warn = (message) => {
@@ -41,10 +42,19 @@ try {
                 originalWarn?.apply(BABYLON.Logger, [message]);
             }
         };
-        // console.log("Applied EARLY patch to Babylon.js Logger."); // Removed log
+
+        // Patch Log for version message
+        const originalLog = BABYLON.Logger.Log;
+        const logSubstringToSuppress = "Babylon.js v";
+         BABYLON.Logger.Log = (message) => {
+            if (!(message && typeof message === 'string' && message.includes(logSubstringToSuppress))) {
+                originalLog?.apply(BABYLON.Logger, [message]);
+            }
+        };
+        // console.log("Applied EARLY patches to Babylon.js Logger."); // Removed log
     }
 } catch (e) {
-    console.error("Error during EARLY logger patch:", e);
+    console.error("Error during EARLY logger patches:", e);
 }
 // --- End Logger Patch ---
 
@@ -118,8 +128,6 @@ else {
         gameState.nickname = nickname; // Set the actual nickname
         nicknameOverlay.style.display = 'none'; // Hide the overlay
 
-        console.log(`Starting game for player: ${gameState.nickname}`);
-
         const engine = initializeEngine(canvas);
         if (!engine) return;
 
@@ -177,7 +185,7 @@ else {
         const droneOptions = { mass: droneMass, restitution: droneRestitution, friction: droneFriction, collisionGroup: 1, collisionMask: -1 };
         drone.physicsImpostor = new BABYLON.PhysicsImpostor(drone, BABYLON.PhysicsImpostor.SphereImpostor, droneOptions, scene);
         drone.physicsImpostor.physicsBody.angularDamping = 1.0;
-        drone.physicsImpostor.physicsBody.fixedRotation = true;
+        drone.physicsImpostor.physicsBody.fixedRotation = true; // Restore fixed rotation
         drone.physicsImpostor.physicsBody.updateMassProperties();
 
         // --- Input Setup ---
@@ -218,13 +226,13 @@ else {
             if (gameState.invincibleTimer <= 0 && !gameState.isGameOver) {
                 barrels.forEach(barrel => {
                     if (drone.intersectsMesh(barrel, false)) {
-                        console.log("Hit a barrel! Lives left:", gameState.lives - 1);
+                        // console.log("Hit a barrel! Lives left:", gameState.lives - 1); // Removed log
                         gameState.invincibleTimer = invincibilityDuration;
                         gameState.lives--;
                         updateLivesText(gameState.lives);
                         resetDroneState(drone);
                         if (gameState.lives <= 0) {
-                            console.log("Game Over - Collision!");
+                            // console.log("Game Over - Collision!"); // Removed log
                             handleGameOver();
                         }
                         return;
@@ -283,7 +291,7 @@ else {
                     score: newScore,
                     timestamp: firebase.database.ServerValue.TIMESTAMP // Optional: add a timestamp
                 });
-                console.log("Score pushed to Firebase:", playerName, newScore);
+                // console.log("Score pushed to Firebase:", playerName, newScore); // Removed log
 
                 // Prune excess entries (keep only top MAX_ENTRIES)
                 // Get all scores, sort, identify keys to remove
@@ -295,7 +303,7 @@ else {
                     if (scoresArray.length > MAX_LEADERBOARD_ENTRIES) {
                         scoresArray.sort((a, b) => b.score - a.score); // Sort descending
                         const keysToRemove = scoresArray.slice(MAX_LEADERBOARD_ENTRIES).map(entry => entry.key);
-                        console.log("Pruning leaderboard, removing keys:", keysToRemove);
+                        // console.log("Pruning leaderboard, removing keys:", keysToRemove); // Removed log
                         const updates = {};
                         keysToRemove.forEach(key => {
                             updates[key] = null; // Setting path to null deletes it
@@ -312,7 +320,7 @@ else {
         async function handleGameOver() { // Make async to await save/load
             if (gameState.isGameOver) return;
             gameState.isGameOver = true;
-            console.log(`Handling Game Over for ${gameState.nickname}. Final Score: ${gameState.score}`);
+            // console.log(`Handling Game Over for ${gameState.nickname}. Final Score: ${gameState.score}`); // Removed log
 
             // Save score first (await ensures it's attempted before loading)
             await saveHighScore(gameState.nickname, gameState.score);
@@ -364,7 +372,7 @@ else {
                 updateTimerText(gameState.missionTimer);
             }
             if (gameState.missionTimer <= 0 && !gameState.isPausedForTimeout && !gameState.isMissionTransitioning) {
-                console.log("Time ran out for mission!");
+                // console.log("Time ran out for mission!"); // Removed log
                 gameState.lives--;
                 updateLivesText(gameState.lives);
                 gameState.invincibleTimer = invincibilityDuration;
@@ -372,7 +380,7 @@ else {
                     console.log("Game Over - Time Ran Out!");
                     handleGameOver(); // Now async
                 } else {
-                    console.log("Time out! Pausing. Press R to continue.");
+                    // console.log("Time out! Pausing. Press R to continue."); // Removed log
                     gameState.isPausedForTimeout = true;
                     showTimeoutContinueMessage(true);
                 }
